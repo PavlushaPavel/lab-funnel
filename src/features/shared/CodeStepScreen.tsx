@@ -9,6 +9,7 @@ import { ScanLine } from '../../ui/ScanLine';
 import { ElementTile } from '../../ui/ElementTile';
 import type { ElementState } from '../../ui/ElementTile';
 import { MODULES, moduleMass } from '../../content/modules';
+import { isVideoPlaceholder } from '../../content/video';
 import type { ScreenCopy } from '../../content/types';
 import { useFunnelStore } from '../../store/funnel';
 import type { ModuleId, Phase, StepId } from '../../store/funnel';
@@ -51,6 +52,9 @@ export function CodeStepScreen({ stepId, moduleId, phase, copy }: CodeStepScreen
   const reduced = useReducedMotionSafe();
   const module = MODULES[moduleId];
   const codeWord = (copy.codeWord ?? '').toUpperCase().replace(/\s+/g, '');
+  // Пока ролик не подключён, ключевое слово физически неоткуда узнать — показываем его,
+  // иначе воронка непроходима. С появлением реального src подсказка исчезает сама.
+  const videoPending = isVideoPlaceholder(`${moduleId}-video`);
 
   const [state, setState] = useState<CodeState>('idle');
   const [unlocked, setUnlocked] = useState(false);
@@ -105,6 +109,13 @@ export function CodeStepScreen({ stepId, moduleId, phase, copy }: CodeStepScreen
         <CodeInput length={codeWord.length} onSubmit={handleSubmit} />
         <ScanLine trigger={state === 'success'} />
       </div>
+
+      {videoPending && (
+        <p className="t-body-s text-ink-muted">
+          Видео пока не подключено, взять слово неоткуда — на время сборки оно такое:{' '}
+          <span className="t-readout-s text-acid">{codeWord}</span>
+        </p>
+      )}
 
       {copy.caption && <p className="t-body-s text-center text-ink-faint">{copy.caption}</p>}
 

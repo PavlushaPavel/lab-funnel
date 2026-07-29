@@ -108,3 +108,12 @@ export function getVideo(id: string): VideoConfig {
     }
   );
 }
+
+/**
+ * Ролик ещё не подключён (пустой src) — режим предпросмотра воронки.
+ * В этом режиме досмотр нельзя требовать всерьёз: видео не существует,
+ * и гейт «Дальше» превратился бы в тупик на 12–25 минут перед пустым экраном.
+ */
+export function isVideoPlaceholder(id: string): boolean {
+  return !getVideo(id).src;
+}

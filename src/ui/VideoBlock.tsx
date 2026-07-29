@@ -45,10 +45,15 @@ export function VideoBlock({ id, onProgress }: VideoBlockProps) {
     if (clamped >= 0.999) setStatus('done');
   };
 
+  // Ролик не подключён — симуляция идёт за PREVIEW_SECONDS, а не за реальный хронометраж.
+  // Иначе разблокировка «Дальше» требовала бы просидеть 12–25 минут перед пустым прямоугольником.
+  const isPlaceholder = !config.src;
+
   const startSimulated = () => {
     if (simTimer.current) return;
     const tickMs = 250;
-    const duration = Math.max(config.duration, 1);
+    const PREVIEW_SECONDS = 6;
+    const duration = isPlaceholder ? PREVIEW_SECONDS : Math.max(config.duration, 1);
     simTimer.current = setInterval(() => {
       setProgress((prev) => {
         const next = prev + tickMs / 1000 / duration;
@@ -98,6 +103,11 @@ export function VideoBlock({ id, onProgress }: VideoBlockProps) {
             className="absolute inset-0 h-full w-full object-cover"
             playsInline
           />
+        )}
+        {isPlaceholder && (
+          <span className="t-label absolute left-3 top-3 rounded-sm border border-line bg-void/80 px-2 py-1 text-ink-muted">
+            ВИДЕО ЕЩЁ НЕ ПОДКЛЮЧЕНО
+          </span>
         )}
         {status !== 'playing' && (
           <button

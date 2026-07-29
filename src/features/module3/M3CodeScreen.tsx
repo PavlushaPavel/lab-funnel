@@ -11,6 +11,7 @@ import { Quote } from '../../ui/Quote';
 import { Prose } from '../../ui/Prose';
 import { SCREENS } from '../../content/screens';
 import { MODULES, moduleMass } from '../../content/modules';
+import { isVideoPlaceholder } from '../../content/video';
 import { useFunnelStore } from '../../store/funnel';
 import { track } from '../../lib/analytics';
 import { haptics } from '../../lib/telegram';
@@ -25,6 +26,9 @@ function normalize(word: string): string {
 }
 
 const CODE_WORD = normalize(copy.codeWord ?? '');
+// Пока ролик не подключён, ключевое слово неоткуда узнать — показываем его,
+// иначе воронка непроходима. С появлением реального src подсказка исчезает сама.
+const VIDEO_PENDING = isVideoPlaceholder('m3-video');
 
 /** Подпись под клеткой по фазе синтеза, как на m1-code/m2-code (CodeStepScreen). */
 const TILE_LABEL: Record<ElementState, string> = {
@@ -120,6 +124,13 @@ export function M3CodeScreen() {
           <CodeInput length={CODE_WORD.length} onSubmit={handleSubmit} />
           <ScanLine trigger={scanTrigger > 0} />
         </div>
+
+        {VIDEO_PENDING && (
+          <p className="t-body-s text-ink-muted">
+            Видео пока не подключено, взять слово неоткуда — на время сборки оно такое:{' '}
+            <span className="t-readout-s text-acid">{CODE_WORD}</span>
+          </p>
+        )}
 
         <AnimatePresence>
           {showError && copy.errorTitle && (
