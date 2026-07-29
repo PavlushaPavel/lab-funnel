@@ -123,7 +123,7 @@ export function ResultScreen() {
             <p className="t-label text-ink-faint">УТЕЧКА · ₽ / МЕС</p>
             <Well>
               <div className="grid gap-1">
-                <div style={{ color: 'var(--warn)' }}>
+                <div style={{ color: 'var(--rust)' }}>
                   <Readout value={leakBase} suffix="₽" size="lg" />
                 </div>
                 <p className="t-label text-ink-faint">ОЦЕНКА. НЕ ОБЕЩАНИЕ.</p>

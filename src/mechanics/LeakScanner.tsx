@@ -15,10 +15,15 @@ interface LeakScannerProps {
   onComplete: (result?: unknown) => void;
 }
 
-/** Штриховка "тёмного" (неконтролируемого) сегмента — только var()-токены, без хардкода цвета. */
+/**
+ * Штриховка "тёмного" (неконтролируемого) сегмента — только var()-токены, без хардкода цвета.
+ * Раньше вся плашка гасилась общим opacity:0.5, из-за чего "тёмный" сегмент читался как
+ * выключенный элемент, а не как "не знаю, что там". Теперь непрозрачность плашки не трогаем —
+ * вместо этого рисуем предупреждающую штриховку цветом --rust (хазмат-лента, DESIGN.md §1
+ * референс "химзащита"), которая читается как явная зона внимания, а не выключенная кнопка.
+ */
 const HATCH_STYLE: CSSProperties = {
-  backgroundImage: 'repeating-linear-gradient(45deg, var(--ink-faint) 0 1px, transparent 1px 7px)',
-  opacity: 0.5,
+  backgroundImage: 'repeating-linear-gradient(45deg, var(--rust) 0 2px, transparent 2px 9px)',
 };
 
 /**
@@ -63,14 +68,14 @@ export function LeakScanner({ data, onComplete }: LeakScannerProps) {
   return (
     <div className="grid gap-4">
       <div
-        className="relative grid items-stretch gap-1 overflow-hidden"
+        className="relative grid items-stretch gap-2 overflow-hidden"
         style={{ gridTemplateColumns: segments.map((_, i) => (i < segments.length - 1 ? '1fr auto' : '1fr')).join(' ') }}
       >
         {!reduced && phase === 'scanning' && (
           <motion.div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 z-10 w-px bg-signal"
-            style={{ boxShadow: '0 0 8px var(--signal-glow)' }}
+            className="pointer-events-none absolute inset-y-0 z-10 w-px bg-acid"
+            style={{ boxShadow: '0 0 8px var(--acid-dim)' }}
             initial={{ left: '0%', opacity: 1 }}
             animate={{ left: '100%', opacity: [1, 1, 0] }}
             transition={{ duration: mechanicsDurations.leakScanTotal, ease: easeOut, times: [0, 0.85, 1] }}
@@ -97,11 +102,14 @@ export function LeakScanner({ data, onComplete }: LeakScannerProps) {
                   transition={{ duration: reduced ? 0.12 : 0.3, ease: easeOut, delay }}
                   style={
                     isControlled
-                      ? { background: 'var(--signal-dim)', border: '1px solid var(--line-signal)' }
-                      : { background: 'var(--bg-sunken)', border: '1px solid var(--line)', ...HATCH_STYLE }
+                      ? { background: 'var(--acid-dim)', border: '1px solid var(--line-acid)' }
+                      : { background: 'var(--bg-sunken)', border: '1px solid var(--rust-dim)', ...HATCH_STYLE }
                   }
                 />
-                <span className={cn('t-label', isControlled ? 'text-signal' : 'text-ink-faint')}>
+                {/* .t-label задаёт цвет ink-faint неслойным CSS-правилом, которое перебивает
+                    слойные Tailwind-утилиты text-*, поэтому цвет — инлайн-стилем (не касается
+                    globals.css/tokens.css — эти файлы вне зоны ответственности агента). */}
+                <span className={cn('t-label', isControlled ? 'text-acid' : 'text-rust')}>
                   {segment.label}
                 </span>
               </button>
@@ -149,7 +157,7 @@ export function LeakScanner({ data, onComplete }: LeakScannerProps) {
             transition={{ duration: reduced ? 0.12 : 0.26, ease: easeOut }}
           >
             Ты видишь{' '}
-            <span style={{ color: 'var(--signal)', fontFamily: 'var(--font-mono)' }}>
+            <span style={{ color: 'var(--acid)', fontFamily: 'var(--font-mono)' }}>
               {controlledIds.length}
             </span>{' '}
             из {segments.length}. Клиент оценивает все {segments.length}.

@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, useMotionValue, useTransform, AnimatePresence } from 'motion/react';
-import { ArrowsLeftRight } from '@phosphor-icons/react';
+import { ArrowsLeftRight, Info } from '@phosphor-icons/react';
 import type { Spec } from '../store/funnel';
 import type { BeforeAfterData } from '../content/mechanics';
-import { cn } from '../lib/cn';
 import { haptics } from '../lib/telegram';
 import { easeOut, useReducedMotionSafe } from '../lib/motion';
 import { mechanicsDurations, mechanicsLayout } from './localMotion';
@@ -36,23 +35,23 @@ function WireframeBefore() {
   );
 }
 
-/** Стилизованный wireframe "ПОСЛЕ" — собранный, со структурой и signal-акцентом. */
+/** Стилизованный wireframe "ПОСЛЕ" — собранный, со структурой и кислотным акцентом. */
 function WireframeAfter() {
   return (
     <div className="grid h-full grid-rows-[auto_1fr_auto] gap-3 p-4">
       <div className="grid grid-cols-[24px_1fr_auto] items-center gap-2">
-        <div className="h-3 w-3 rounded-sm bg-signal" />
+        <div className="h-3 w-3 rounded-sm bg-acid" />
         <div className="h-2 w-16 rounded-sm bg-raised" />
-        <div className="h-5 w-14 rounded-sm bg-signal-dim" />
+        <div className="h-5 w-14 rounded-sm bg-acid-dim" />
       </div>
       <div className="grid content-start gap-2">
         <div className="h-4 w-5/6 rounded-sm bg-ink" style={{ opacity: 0.85 }} />
         <div className="h-2 w-2/3 rounded-sm bg-raised" />
         <div className="h-2 w-1/2 rounded-sm bg-raised" />
-        <div className="mt-2 h-9 w-28 rounded-sm bg-signal" />
+        <div className="mt-2 h-9 w-28 rounded-sm bg-acid" />
         <div className="mt-6 grid grid-cols-3 gap-2">
           <div className="h-14 rounded-sm border border-line bg-panel" />
-          <div className="h-14 rounded-sm border border-line-signal bg-signal-dim" />
+          <div className="h-14 rounded-sm border border-line-acid bg-acid-dim" />
           <div className="h-14 rounded-sm border border-line bg-panel" />
         </div>
         <div className="mt-4 grid gap-1 rounded-sm border-l-2 border-line-strong bg-panel p-2">
@@ -60,7 +59,7 @@ function WireframeAfter() {
           <div className="h-2 w-1/2 rounded-sm bg-raised" />
         </div>
       </div>
-      <div className="h-10 rounded-sm bg-signal" />
+      <div className="h-10 rounded-sm bg-acid" />
     </div>
   );
 }
@@ -144,7 +143,7 @@ export function BeforeAfter({ data, onComplete }: BeforeAfterProps) {
           dragMomentum={false}
           onDragStart={() => haptics.light()}
         >
-          <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-signal" />
+          <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-acid" />
           <div
             className="absolute top-1/2 left-1/2 grid h-8 w-8 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-line-strong bg-raised"
             style={{ boxShadow: 'var(--shadow-panel-sheen)' }}
@@ -153,7 +152,9 @@ export function BeforeAfter({ data, onComplete }: BeforeAfterProps) {
           </div>
         </motion.div>
 
-        {/* Маркеры. */}
+        {/* Маркеры. Фон меток намеренно --bg-panel (а не --bg-raised, как блоки самого макета) —
+            иначе непросмотренная метка сливается с "мебелью" wireframe-а. Плюс контрастная
+            рамка и иконка Info вместо плоской точки — понятная аффорданса поверх плотной картинки. */}
         {data.markers.map((marker) => (
           <button
             key={marker.id}
@@ -164,15 +165,17 @@ export function BeforeAfter({ data, onComplete }: BeforeAfterProps) {
             style={{ left: `${marker.x}%`, top: `${marker.y}%` }}
           >
             <span
-              className="grid h-6 w-6 place-items-center rounded-full border"
+              className="grid h-7 w-7 place-items-center rounded-full border-2"
               style={{
-                background: viewed[marker.id] ? 'var(--signal)' : 'var(--bg-raised)',
-                borderColor: viewed[marker.id] ? 'var(--signal)' : 'var(--line-strong)',
+                background: viewed[marker.id] ? 'var(--acid)' : 'var(--bg-panel)',
+                borderColor: viewed[marker.id] ? 'var(--acid)' : 'var(--ink)',
+                boxShadow: 'var(--shadow-panel-sheen)',
               }}
             >
-              <span
-                className="h-1.5 w-1.5 rounded-full"
-                style={{ background: viewed[marker.id] ? 'var(--ink-invert)' : 'var(--ink-faint)' }}
+              <Info
+                weight="bold"
+                size={14}
+                color={viewed[marker.id] ? 'var(--ink-invert)' : 'var(--ink)'}
                 aria-hidden="true"
               />
             </span>
@@ -195,7 +198,12 @@ export function BeforeAfter({ data, onComplete }: BeforeAfterProps) {
         )}
       </AnimatePresence>
 
-      <p className={cn('t-label', Object.keys(viewed).length === data.markers.length ? 'text-signal' : 'text-ink-faint')}>
+      {/* .t-label задаёт цвет ink-faint неслойным CSS-правилом, которое перебивает слойные
+          Tailwind-утилиты text-*, поэтому цвет — инлайн-стилем. */}
+      <p
+        className="t-label"
+        style={{ color: Object.keys(viewed).length === data.markers.length ? 'var(--acid)' : undefined }}
+      >
         ТОЧЕК ОСМОТРЕНО {Object.keys(viewed).length} ИЗ {data.markers.length}
       </p>
     </div>

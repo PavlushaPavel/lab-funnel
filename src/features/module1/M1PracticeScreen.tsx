@@ -82,7 +82,7 @@ export function M1PracticeScreen() {
           Попробовать ассистента
         </Button>
         {!ASSISTANT_URL && (
-          <p className="t-body-s text-ink-faint">Ссылка на ассистента ещё не подключена.</p>
+          <p className="t-body-s text-ink-muted">Ссылка на ассистента ещё не подключена.</p>
         )}
       </div>
 

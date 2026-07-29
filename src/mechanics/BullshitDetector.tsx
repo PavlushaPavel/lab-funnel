@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Check, CursorClick, X } from '@phosphor-icons/react';
 import type { Spec } from '../store/funnel';
 import type { BullshitDetectorData } from '../content/mechanics';
 import { Well } from '../ui/Well';
@@ -69,8 +70,11 @@ export function BullshitDetector({ data, onComplete }: BullshitDetectorProps) {
       <p className="t-body text-ink-muted">{data.intro}</p>
 
       <Well>
+        {/* Карточки-фразы: крупный текст + бордер + иконка-курсор — явная аффорданса тапа.
+            Ключевая обучающая механика продукта, поэтому фразы должны читаться как кнопки
+            с первого взгляда, без подсказок. */}
         <motion.div
-          className="grid gap-1"
+          className="grid gap-2"
           variants={reduced ? undefined : listStagger}
           initial={reduced ? undefined : 'hidden'}
           animate={reduced ? undefined : 'show'}
@@ -84,29 +88,37 @@ export function BullshitDetector({ data, onComplete }: BullshitDetectorProps) {
                   onClick={() => handleTap(phrase.id, phrase.isWater)}
                   aria-pressed={tapped[phrase.id] ?? false}
                   className={cn(
-                    'grid w-full min-h-11 items-center gap-1 rounded-sm px-3 py-3 text-left',
-                    state === 'idle' && 'border-l border-transparent',
-                    state === 'caught' && 'border-l-2 bg-signal-dim',
-                    state === 'falsePositive' && 'border-l-2 bg-bad-dim'
+                    'grid min-h-14 w-full grid-cols-[24px_1fr] items-start gap-3 rounded-md border bg-raised px-4 py-3.5 text-left',
+                    state === 'idle' && 'border-line',
+                    state === 'caught' && 'border-line-acid bg-acid-dim',
+                    state === 'falsePositive' && 'border-bad bg-bad-dim'
                   )}
                   style={{
+                    borderLeftWidth: state === 'idle' ? 1 : 2,
                     borderLeftColor:
-                      state === 'caught' ? 'var(--signal)' : state === 'falsePositive' ? 'var(--bad)' : undefined,
+                      state === 'caught' ? 'var(--acid)' : state === 'falsePositive' ? 'var(--bad)' : undefined,
                   }}
                 >
-                  <span
-                    className={cn(
-                      't-body-s',
-                      state === 'caught' ? 'text-ink-muted line-through' : 'text-ink'
-                    )}
-                  >
-                    {phrase.text}
+                  <span className="pt-0.5" aria-hidden="true">
+                    {state === 'idle' && <CursorClick weight="regular" size={18} color="var(--ink-faint)" />}
+                    {state === 'caught' && <Check weight="bold" size={18} color="var(--acid)" />}
+                    {state === 'falsePositive' && <X weight="bold" size={18} color="var(--bad)" />}
                   </span>
-                  {tapped[phrase.id] && (
-                    <span className={cn('t-body-s', state === 'falsePositive' ? 'text-bad' : 'text-ink-muted')}>
-                      {phrase.comment}
+                  <span className="grid gap-1">
+                    <span
+                      className={cn(
+                        't-body',
+                        state === 'caught' ? 'text-ink-muted line-through' : 'text-ink'
+                      )}
+                    >
+                      {phrase.text}
                     </span>
-                  )}
+                    {tapped[phrase.id] && (
+                      <span className={cn('t-body-s', state === 'falsePositive' ? 'text-bad' : 'text-ink-muted')}>
+                        {phrase.comment}
+                      </span>
+                    )}
+                  </span>
                 </button>
               </motion.div>
             );
@@ -123,7 +135,11 @@ export function BullshitDetector({ data, onComplete }: BullshitDetectorProps) {
           </div>
         </div>
         {falsePositives > 0 && (
-          <span className="t-label justify-self-end text-bad">ЛОЖНЫХ СРАБАТЫВАНИЙ: {falsePositives}</span>
+          // .t-label задаёт цвет ink-faint неслойным правилом (globals.css), которое перебивает
+          // слойные Tailwind-утилиты text-*; поэтому цвет предупреждения — инлайн-стилем.
+          <span className="t-label justify-self-end text-bad">
+            ЛОЖНЫХ СРАБАТЫВАНИЙ: {falsePositives}
+          </span>
         )}
       </div>
 

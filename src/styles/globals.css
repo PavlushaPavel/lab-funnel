@@ -36,15 +36,6 @@
   --color-bad: var(--bad);
   --color-bad-dim: var(--bad-dim);
 
-  /* Алиасы совместимости, подлежат удалению вместе с блоком в tokens.css —
-     держат рабочими классы вида bg-signal/text-warn из кода прошлой волны. */
-  --color-line-signal: var(--line-signal);
-  --color-signal: var(--signal);
-  --color-signal-deep: var(--signal-deep);
-  --color-signal-dim: var(--signal-dim);
-  --color-signal-glow: var(--signal-glow);
-  --color-warn: var(--warn);
-  --color-warn-dim: var(--warn-dim);
 
   /* Шрифты и радиусы — имя переменной Tailwind (--font-*, --radius-*) совпадает
      с именем в tokens.css дословно, поэтому здесь литерал, а не var(),
@@ -120,76 +111,83 @@ div {
   outline-offset: 2px;
 }
 
-/* ---- Типографическая шкала (DESIGN.md v2 §4) ----
-   Переработана под читаемость: трекинг лейбла снижен с +0.14em до +0.10em
-   (на кириллице широкий трекинг не читался), тело и вторичный текст укрупнены. */
-.t-display-xl {
-  font: 700 2.125rem/1.06 var(--font-sans);
-  letter-spacing: -0.028em;
-  text-wrap: balance;
-  max-width: 26ch;
-}
+/* ВАЖНО: типографические классы обязаны лежать в слое.
+   Неслойный CSS по каскаду перебивает любой слойный, поэтому пока эти правила
+   были вне @layer, `.t-label` со своим color: var(--ink-faint) молча выигрывал
+   у Tailwind-утилит text-* — сочетание «t-label + text-acid» никогда не меняло
+   цвет. Слой components идёт до utilities, что и восстанавливает переопределение. */
+@layer components {
+  /* ---- Типографическая шкала (DESIGN.md v2 §4) ----
+     Переработана под читаемость: трекинг лейбла снижен с +0.14em до +0.10em
+     (на кириллице широкий трекинг не читался), тело и вторичный текст укрупнены. */
+  .t-display-xl {
+    font: 700 2.125rem/1.06 var(--font-sans);
+    letter-spacing: -0.028em;
+    text-wrap: balance;
+    max-width: 26ch;
+  }
 
-.t-display-l {
-  font: 700 1.75rem/1.1 var(--font-sans);
-  letter-spacing: -0.022em;
-  text-wrap: balance;
-  max-width: 26ch;
-}
+  .t-display-l {
+    font: 700 1.75rem/1.1 var(--font-sans);
+    letter-spacing: -0.022em;
+    text-wrap: balance;
+    max-width: 26ch;
+  }
 
-.t-h1 {
-  font: 600 1.375rem/1.22 var(--font-sans);
-  letter-spacing: -0.018em;
-  text-wrap: balance;
-  max-width: 26ch;
-}
+  .t-h1 {
+    font: 600 1.375rem/1.22 var(--font-sans);
+    letter-spacing: -0.018em;
+    text-wrap: balance;
+    max-width: 26ch;
+  }
 
-.t-h2 {
-  font: 600 1.125rem/1.32 var(--font-sans);
-  letter-spacing: -0.012em;
-  text-wrap: balance;
-  max-width: 26ch;
-}
+  .t-h2 {
+    font: 600 1.125rem/1.32 var(--font-sans);
+    letter-spacing: -0.012em;
+    text-wrap: balance;
+    max-width: 26ch;
+  }
 
-.t-body {
-  font: 400 1.0625rem/1.62 var(--font-sans);
-  letter-spacing: -0.003em;
-  max-width: 42ch;
-}
+  .t-body {
+    font: 400 1.0625rem/1.62 var(--font-sans);
+    letter-spacing: -0.003em;
+    max-width: 42ch;
+  }
 
-.t-body-s {
-  font: 400 0.9375rem/1.55 var(--font-sans);
-  letter-spacing: 0;
-}
+  .t-body-s {
+    font: 400 0.9375rem/1.55 var(--font-sans);
+    letter-spacing: 0;
+  }
 
-.t-label {
-  font: 500 0.75rem/1.25 var(--font-mono);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
+  .t-label {
+    font: 500 0.75rem/1.25 var(--font-mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
 
-.t-readout {
-  font: 600 2.5rem/1 var(--font-mono);
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-}
+  .t-readout {
+    font: 600 2.5rem/1 var(--font-mono);
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
 
-.t-readout-s {
-  font: 500 0.9375rem/1.3 var(--font-mono);
-  letter-spacing: 0.02em;
-  font-variant-numeric: tabular-nums;
-}
+  .t-readout-s {
+    font: 500 0.9375rem/1.3 var(--font-mono);
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+  }
 
-/* Символ элемента в клетке ElementTile (DESIGN.md §4, §6.1) — моно, крупный, жирный. */
-.t-symbol {
-  font: 700 1.875rem/1 var(--font-mono);
-  letter-spacing: -0.02em;
-}
+  /* Символ элемента в клетке ElementTile (DESIGN.md §4, §6.1) — моно, крупный, жирный. */
+  .t-symbol {
+    font: 700 1.875rem/1 var(--font-mono);
+    letter-spacing: -0.02em;
+  }
 
-/* Любые моно-числа — фиксированная ширина цифр, не прыгают при анимации */
-.tnum {
-  font-variant-numeric: tabular-nums;
+  /* Любые моно-числа — фиксированная ширина цифр, не прыгают при анимации */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 /* ---- Фирменные элементы (DESIGN.md §6) ---- */

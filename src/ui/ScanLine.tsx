@@ -25,7 +25,7 @@ export function ScanLine({ trigger }: ScanLineProps) {
       {active && (
         <motion.div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 z-10 h-px bg-signal"
+          className="pointer-events-none absolute inset-x-0 z-10 h-px bg-acid"
           initial={{ top: '0%', opacity: 1 }}
           animate={{ top: '100%', opacity: 0.4 }}
           exit={{ opacity: 0 }}

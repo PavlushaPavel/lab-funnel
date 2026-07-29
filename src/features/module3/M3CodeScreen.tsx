@@ -3,14 +3,14 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Screen } from '../../ui/Screen';
 import { BottomBar } from '../../ui/BottomBar';
 import { Button } from '../../ui/Button';
-import { Panel } from '../../ui/Panel';
-import { NodeLabel } from '../../ui/NodeLabel';
 import { CodeInput } from '../../ui/CodeInput';
 import { ScanLine } from '../../ui/ScanLine';
+import { ElementTile } from '../../ui/ElementTile';
+import type { ElementState } from '../../ui/ElementTile';
 import { Quote } from '../../ui/Quote';
 import { Prose } from '../../ui/Prose';
 import { SCREENS } from '../../content/screens';
-import { MODULES } from '../../content/modules';
+import { MODULES, moduleMass } from '../../content/modules';
 import { useFunnelStore } from '../../store/funnel';
 import { track } from '../../lib/analytics';
 import { haptics } from '../../lib/telegram';
@@ -26,24 +26,36 @@ function normalize(word: string): string {
 
 const CODE_WORD = normalize(copy.codeWord ?? '');
 
+/** Подпись под клеткой по фазе синтеза, как на m1-code/m2-code (CodeStepScreen). */
+const TILE_LABEL: Record<ElementState, string> = {
+  locked: 'ЖДЁТ ФОРМУЛЫ',
+  active: 'ИДЁТ СИНТЕЗ…',
+  obtained: 'ПОЛУЧЕНО',
+};
+const TILE_LABEL_CLASS: Record<ElementState, string> = {
+  locked: 'text-ink-faint',
+  active: 'text-acid',
+  obtained: 'text-sky',
+};
+
 /**
  * Оркестровка появления сцены разблокировки после верного кода: сначала CodeInput сам
- * доигрывает каскад слотов + скан-линию (lib/motion.ts::durations), затем открывается
- * панель разблокированного модуля, и только после паузы — подпись-шутка (см. ниже).
+ * доигрывает каскад слотов + скан-линию (lib/motion.ts::durations), затем клетка М-03
+ * переходит «активна» → «получена», и только после паузы — подпись-шутка (см. ниже).
  * Это не пружина/easing (те уже взяты из lib/motion.ts), а сюжетная пауза конкретного
  * экрана, поэтому живёт локально, а не в общем моторном модуле.
  */
 const REVEAL = {
-  panelDelay: 0.55, // даём CodeInput доиграть каскад + скан-линию, прежде чем открыть панель
-  captionDelay: 0.55 + 0.32 + 0.35, // подпись выходит отдельным бит-ом, после самой панели
+  panelDelay: 0.55, // даём CodeInput доиграть каскад + скан-линию, прежде чем клетка «получена»
+  captionDelay: 0.55 + 0.32 + 0.35, // подпись выходит отдельным бит-ом, после самой клетки
   errorHold: 2400, // сколько держим текст ошибки на экране (сам CodeInput чистит слоты быстрее)
 } as const;
 
 /**
- * Финальная проверка (`m3-code`) — код ENTER. После успеха модуль М-03 переходит из
- * «заперто» в «активно», показывается outcome модуля (PRODUCT.md §3.5). Подпись «Тебе,
- * если что.» — по словам ТЗ, лучшая шутка воронки: чтобы не потерялась в потоке, она
- * выходит отдельным замедленным бит-ом уже ПОСЛЕ основного текста успеха, оформленная
+ * Финальная проверка (`m3-code`) — код ENTER. После успеха клетка М-03 проходит фазами
+ * «заперта» → «идёт синтез» → «получена» (--sky), показывается outcome модуля (PRODUCT.md §3.5).
+ * Подпись «Тебе, если что.» — по словам ТЗ, лучшая шутка воронки: чтобы не потерялась в потоке,
+ * она выходит отдельным замедленным бит-ом уже ПОСЛЕ основного текста успеха, оформленная
  * как авторская ремарка (компонент Quote), а не как рядовая подпись под полем.
  */
 export function M3CodeScreen() {
@@ -51,7 +63,8 @@ export function M3CodeScreen() {
   const next = useFunnelStore((s) => s.next);
   const reduced = useReducedMotionSafe();
 
-  const [unlocked, setUnlocked] = useState(false);
+  const [solved, setSolved] = useState(false); // код принят, идёт синтез
+  const [unlocked, setUnlocked] = useState(false); // клетка «получена»
   const [showError, setShowError] = useState(false);
   const scanTriggerRef = useRef(0);
   const [scanTrigger, setScanTrigger] = useState(0);
@@ -71,6 +84,7 @@ export function M3CodeScreen() {
       track('code_success', { module: 'm3' });
       unlockCode('m3');
       setShowError(false);
+      setSolved(true);
       scanTriggerRef.current += 1;
       setScanTrigger(scanTriggerRef.current);
       window.setTimeout(() => setUnlocked(true), REVEAL.panelDelay * 1000);
@@ -88,6 +102,8 @@ export function M3CodeScreen() {
     next();
   };
 
+  const tileState: ElementState = unlocked ? 'obtained' : solved ? 'active' : 'locked';
+
   return (
     <Screen id="m3-code" phase="believe">
       <div className="grid gap-6 pt-2">
@@ -101,9 +117,7 @@ export function M3CodeScreen() {
         </div>
 
         <div className="relative">
-          <Panel status={unlocked ? 'done' : 'active'}>
-            <CodeInput length={CODE_WORD.length} onSubmit={handleSubmit} />
-          </Panel>
+          <CodeInput length={CODE_WORD.length} onSubmit={handleSubmit} />
           <ScanLine trigger={scanTrigger > 0} />
         </div>
 
@@ -128,6 +142,19 @@ export function M3CodeScreen() {
           )}
         </AnimatePresence>
 
+        {/* Сцена получения вещества: клетка М-03 проходит заперта → идёт синтез → получена. */}
+        <div className="grid justify-items-center gap-3 py-2">
+          <ElementTile
+            number={module3.number}
+            symbol={module3.symbol}
+            name={module3.title}
+            mass={moduleMass(module3.id)}
+            state={tileState}
+            size="lg"
+          />
+          {solved && <span className={`t-label ${TILE_LABEL_CLASS[tileState]}`}>{TILE_LABEL[tileState]}</span>}
+        </div>
+
         <AnimatePresence>
           {unlocked && (
             <motion.div
@@ -136,7 +163,6 @@ export function M3CodeScreen() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: reduced ? 0.12 : 0.32, ease: easeOut }}
             >
-              <NodeLabel code={module3.code} title={module3.title} status="active" />
               <p className="t-h1 text-ink">{copy.successTitle}</p>
               <p className="t-body-s text-ink-muted">{module3.outcome}</p>
 

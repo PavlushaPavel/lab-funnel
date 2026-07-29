@@ -71,7 +71,7 @@ function withPriceHighlight(text: string) {
   return (
     <>
       {text.slice(0, idx)}
-      <span className="font-mono font-semibold text-signal tnum">{PRICE_TEXT}</span>
+      <span className="font-mono font-semibold text-acid tnum">{PRICE_TEXT}</span>
       {text.slice(idx + PRICE_TEXT.length)}
     </>
   );
@@ -143,7 +143,7 @@ export function PrefreimScreen() {
         <div className="relative h-full w-full overflow-hidden">
           <div className="tick-rail-fill" style={{ ['--tick-color' as string]: 'var(--line)' }} />
           <motion.div className="absolute inset-y-0 left-0 overflow-hidden" style={{ width: fillWidth }}>
-            <div className="tick-rail-fill" style={{ ['--tick-color' as string]: 'var(--signal)' }} />
+            <div className="tick-rail-fill" style={{ ['--tick-color' as string]: 'var(--acid)' }} />
           </motion.div>
         </div>
       </div>
@@ -186,7 +186,7 @@ export function PrefreimScreen() {
           <div className="grid gap-5">
             {SECTION_2.variants.map((variant, i) => (
               <div key={i} className="grid gap-2">
-                <span className="t-label text-signal">ВАРИАНТ {String(i + 1).padStart(2, '0')}</span>
+                <span className="t-label text-acid">ВАРИАНТ {String(i + 1).padStart(2, '0')}</span>
                 {reduced ? (
                   <Quote>{variant}</Quote>
                 ) : (
@@ -228,7 +228,7 @@ export function PrefreimScreen() {
                     className="grid grid-cols-[28px_1fr] items-baseline gap-2 py-2"
                     style={i > 0 ? { borderTop: '1px solid var(--line)' } : undefined}
                   >
-                    <span className="t-readout-s text-signal">{String(i + 1).padStart(2, '0')}</span>
+                    <span className="t-readout-s text-acid">{String(i + 1).padStart(2, '0')}</span>
                     <span className="t-body-s text-ink">{step}</span>
                   </li>
                 ))}
@@ -281,7 +281,7 @@ export function PrefreimScreen() {
             </div>
           </div>
 
-          <p className="t-h2 text-signal">{SECTION_4.punchline}</p>
+          <p className="t-h2 text-acid">{SECTION_4.punchline}</p>
 
           <RevealParagraphs paragraphs={SECTION_4.middle} reduced={reduced} />
 
@@ -379,7 +379,7 @@ export function PrefreimScreen() {
             {reduced ? (
               <>
                 <p className="t-display-l text-ink">{SECTION_7.final[0]}</p>
-                <p className="t-display-l text-signal">{SECTION_7.final[1]}</p>
+                <p className="t-display-l text-acid">{SECTION_7.final[1]}</p>
               </>
             ) : (
               <>
@@ -393,7 +393,7 @@ export function PrefreimScreen() {
                   {SECTION_7.final[0]}
                 </motion.p>
                 <motion.p
-                  className="t-display-l text-signal"
+                  className="t-display-l text-acid"
                   variants={listItem}
                   initial="hidden"
                   whileInView="show"

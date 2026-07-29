@@ -82,9 +82,9 @@ export function Bridge1Screen() {
         <div className="grid gap-1">
           <div className="grid grid-cols-[1fr_auto] items-baseline">
             <span className="t-label text-ink-faint">УТЕЧКА СЕЙЧАС</span>
-            <span className="t-label text-signal">ЗАКРЫТО НА {closedPct}%</span>
+            <span className="t-label text-acid">ЗАКРЫТО НА {closedPct}%</span>
           </div>
-          <div style={{ color: 'var(--warn)' }}>
+          <div style={{ color: 'var(--rust)' }}>
             <Readout value={displayValue} suffix="₽" />
           </div>
           <span className="t-body-s text-ink-muted">

@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Screen } from '../../ui/Screen';
 import { BottomBar } from '../../ui/BottomBar';
 import { Button } from '../../ui/Button';
-import { Panel } from '../../ui/Panel';
 import { Well } from '../../ui/Well';
 import { Readout } from '../../ui/Readout';
 import { Bullets } from '../../ui/Bullets';
@@ -99,16 +98,15 @@ export function ChainScreen() {
         </AnimatePresence>
 
         {/* Единственный экземпляр ModuleChain — монтируется при входе во второй такт и живёт
-            до конца экрана, включая финальный, чтобы не переигрывать сборку. */}
+            до конца экрана, включая финальный, чтобы не переигрывать сборку. Сцена без
+            постороннего контента — никакой обёртки-панели вокруг реакции синтеза. */}
         {chainStarted && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: reduced ? 0.12 : 0.24, ease: easeOut }}
           >
-            <Panel label="СБОРКА ЦЕПОЧКИ" status={scene === 'result' ? 'done' : 'scanning'}>
-              <ModuleChain data={data} spec={spec} onComplete={handleChainComplete} />
-            </Panel>
+            <ModuleChain data={data} spec={spec} onComplete={handleChainComplete} />
           </motion.div>
         )}
 
@@ -138,7 +136,7 @@ export function ChainScreen() {
                 <Well>
                   <div className="grid gap-2">
                     <div className="grid grid-cols-[1fr_auto] items-end gap-3">
-                      <div style={{ color: 'var(--warn)' }}>
+                      <div className="text-rust">
                         <Readout value={leakCurrent} suffix="₽" size="lg" />
                       </div>
                       <div className="grid justify-items-end gap-0.5">

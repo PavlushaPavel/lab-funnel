@@ -106,7 +106,7 @@ export function VideoBlock({ id, onProgress }: VideoBlockProps) {
             aria-label="Смотреть видео"
             className="absolute inset-0 grid place-items-center"
           >
-            <span className="grid h-14 w-14 place-items-center rounded-full bg-signal">
+            <span className="grid h-14 w-14 place-items-center rounded-full bg-acid">
               <Play weight="regular" size={24} color="var(--ink-invert)" aria-hidden="true" />
             </span>
           </button>
@@ -117,7 +117,7 @@ export function VideoBlock({ id, onProgress }: VideoBlockProps) {
           {config.title} · {formatDuration(config.duration)}
         </span>
         <span
-          className={cn('t-label', status === 'idle' ? 'text-ink-faint' : 'text-signal')}
+          className={cn('t-label', status === 'idle' ? 'text-ink-faint' : 'text-acid')}
         >
           {STATUS_LABEL[status]}
         </span>

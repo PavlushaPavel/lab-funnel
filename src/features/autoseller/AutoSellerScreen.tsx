@@ -130,7 +130,7 @@ function OptionsBlock({
             onClick={() => onPick(item, option)}
             className={cn(
               't-body-s min-h-11 rounded-md border px-4 py-2 text-left',
-              isChosen ? 'border-line-signal bg-signal-dim text-signal' : 'border-line bg-panel text-ink',
+              isChosen ? 'border-line-acid bg-acid-dim text-acid' : 'border-line bg-panel text-ink',
               isAnswered && !isChosen && 'opacity-40'
             )}
           >

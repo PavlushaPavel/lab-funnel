@@ -1,15 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { Lock, LockOpen } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Screen } from '../../ui/Screen';
 import { BottomBar } from '../../ui/BottomBar';
 import { Button } from '../../ui/Button';
-import { NodeLabel } from '../../ui/NodeLabel';
-import { Panel } from '../../ui/Panel';
 import { Prose } from '../../ui/Prose';
 import { CodeInput } from '../../ui/CodeInput';
 import { ScanLine } from '../../ui/ScanLine';
-import { MODULES } from '../../content/modules';
+import { ElementTile } from '../../ui/ElementTile';
+import type { ElementState } from '../../ui/ElementTile';
+import { MODULES, moduleMass } from '../../content/modules';
 import type { ScreenCopy } from '../../content/types';
 import { useFunnelStore } from '../../store/funnel';
 import type { ModuleId, Phase, StepId } from '../../store/funnel';
@@ -26,10 +25,25 @@ interface CodeStepScreenProps {
 
 type CodeState = 'idle' | 'error' | 'success';
 
+/** Подпись под клеткой по фазе синтеза — единственное текстовое сопровождение состояния. */
+const TILE_LABEL: Record<ElementState, string> = {
+  locked: 'ЖДЁТ ФОРМУЛЫ',
+  active: 'ИДЁТ СИНТЕЗ…',
+  obtained: 'ПОЛУЧЕНО',
+};
+const TILE_LABEL_CLASS: Record<ElementState, string> = {
+  locked: 'text-ink-faint',
+  active: 'text-acid',
+  obtained: 'text-sky',
+};
+
 /**
- * Общий экран ввода кода модулей 1/2 + явная сцена разблокировки узла (ARCHITECTURE.md §7
- * CodeInput, PRODUCT.md §3.3/§3.5). CodeInput сам умеет слоты/shake/каскад/haptics —
- * этот экран только сравнивает код, ведёт стор и раскручивает сцену «заперто → активно».
+ * Общий экран ввода кода модулей 1/2 + сцена разблокировки (ARCHITECTURE.md §7 CodeInput,
+ * PRODUCT.md §3.3/§3.5, DESIGN.md §6.3). CodeInput сам умеет слоты/shake/каскад/haptics —
+ * этот экран сравнивает код, ведёт стор и раскручивает получение клетки элемента:
+ * 'locked' → 'active' (верный код, идёт замер) → 'obtained' (--sky, вещество получено).
+ * Переход собран из фаз, а не одной анимацией — клетка сама пульсирует при смене состояния
+ * (ElementTile), плюс отдельно проявляется outcome-текст с задержкой после неё.
  */
 export function CodeStepScreen({ stepId, moduleId, phase, copy }: CodeStepScreenProps) {
   const next = useFunnelStore((s) => s.next);
@@ -74,10 +88,12 @@ export function CodeStepScreen({ stepId, moduleId, phase, copy }: CodeStepScreen
     next();
   };
 
+  // Клетка: заперта, пока код не введён верно; во время замера — активна (--acid);
+  // получена — только после того, как каскад слотов и скан-линия доиграли (--sky).
+  const tileState: ElementState = unlocked ? 'obtained' : state === 'success' ? 'active' : 'locked';
+
   return (
     <Screen id={stepId} phase={phase}>
-      <NodeLabel code={module.code} title={module.title} status={unlocked ? 'active' : 'locked'} />
-
       <h1 className="t-display-l text-ink">{copy.title}</h1>
       <Prose>
         {copy.body?.map((paragraph, i) => (
@@ -113,49 +129,47 @@ export function CodeStepScreen({ stepId, moduleId, phase, copy }: CodeStepScreen
         )}
       </AnimatePresence>
 
-      {/* Явная сцена разблокировки узла (PRODUCT.md §3.3): карточка «заперто → активно»,
-          статус-точка загорается сигналом, показывается outcome модуля — и только тогда
-          доступна кнопка «Дальше». */}
-      <AnimatePresence>
-        {state === 'success' && (
-          <motion.div
-            initial={reduced ? { opacity: 0 } : { opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: reduced ? 0.12 : 0.3, ease: easeOut }}
-          >
-            <Panel label={`${module.code} · ${module.title}`} status={unlocked ? 'active' : 'scanning'}>
-              <div className="grid grid-cols-[auto_1fr] items-center gap-3">
-                {unlocked ? (
-                  <LockOpen weight="regular" size={22} color="var(--signal)" aria-hidden="true" />
-                ) : (
-                  <Lock weight="regular" size={22} color="var(--ink-faint)" aria-hidden="true" />
-                )}
-                <div className="grid gap-1">
-                  <span
-                    className="t-label"
-                    style={{ color: unlocked ? 'var(--signal)' : 'var(--ink-faint)' }}
-                  >
-                    {unlocked ? 'УЗЕЛ АКТИВЕН' : 'РАЗБЛОКИРОВКА…'}
-                  </span>
-                  {!unlocked && <p className="t-body text-ink">{copy.successTitle}</p>}
-                  <AnimatePresence>
-                    {unlocked && (
-                      <motion.p
-                        className="t-body text-ink"
-                        initial={reduced ? { opacity: 0 } : { opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: reduced ? 0.12 : 0.28, ease: easeOut }}
-                      >
-                        {module.outcome}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
-            </Panel>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Сцена получения вещества (DESIGN.md §6.1/§6.3): клетка модуля проходит фазами
+          заперта → идёт синтез → получена, и только тогда открывается outcome и кнопка «Дальше». */}
+      <div className="grid justify-items-center gap-3 py-2">
+        <ElementTile
+          number={module.number}
+          symbol={module.symbol}
+          name={module.title}
+          mass={moduleMass(module.id)}
+          state={tileState}
+          size="lg"
+        />
+        <span className={`t-label ${TILE_LABEL_CLASS[tileState]}`}>{TILE_LABEL[tileState]}</span>
+
+        {/* Пока клетка «активна» (идёт замер) — держим successTitle из копирайта; как только
+            клетка «получена» — сменяем на outcome модуля. Два разных бита, а не один текст. */}
+        <AnimatePresence mode="wait">
+          {tileState === 'active' && copy.successTitle && (
+            <motion.p
+              key="success-title"
+              className="t-body text-ink text-center"
+              initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: reduced ? 0.12 : 0.24, ease: easeOut }}
+            >
+              {copy.successTitle}
+            </motion.p>
+          )}
+          {tileState === 'obtained' && (
+            <motion.p
+              key="outcome"
+              className="t-body text-ink text-center"
+              initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: reduced ? 0.12 : 0.3, ease: easeOut, delay: reduced ? 0 : 0.1 }}
+            >
+              {module.outcome}
+            </motion.p>
+          )}
+        </AnimatePresence>
+      </div>
 
       <BottomBar>
         <Button variant="primary" full disabled={!unlocked} onClick={handleNext}>
