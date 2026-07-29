@@ -7,8 +7,8 @@ interface TickRailProps {
 }
 
 /**
- * Калибровочная шкала — главный фирменный элемент (DESIGN.md §6.1).
- * Два слоя рисок: полная дорожка цветом --line, поверх — залитая доля --signal,
+ * Калибровочная шкала (DESIGN.md §6.5 ProgressRail).
+ * Два слоя рисок: полная дорожка цветом --line, поверх — залитая доля --acid,
  * обрезанная по progress через overflow:hidden.
  */
 export function TickRail({ progress, height = 24, className }: TickRailProps) {
@@ -28,7 +28,7 @@ export function TickRail({ progress, height = 24, className }: TickRailProps) {
         style={{ width: `${clamped * 100}%` }}
       >
         {/* inset:0 внутри уже обрезанной обёртки — риски продолжают ту же сетку 6px от общего левого края */}
-        <div className="tick-rail-fill" style={{ ['--tick-color' as string]: 'var(--signal)' }} />
+        <div className="tick-rail-fill" style={{ ['--tick-color' as string]: 'var(--acid)' }} />
       </div>
     </div>
   );

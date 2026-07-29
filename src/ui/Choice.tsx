@@ -29,7 +29,7 @@ export function Choice({ index, state, onSelect, children, className }: ChoicePr
       className={cn(
         'grid min-h-14 w-full grid-cols-[24px_1fr] items-center gap-3 rounded-md border bg-panel px-4 py-3 text-left',
         state === 'idle' && 'border-line',
-        state === 'selected' && 'border-line-signal bg-signal-dim',
+        state === 'selected' && 'border-line-acid bg-acid-dim',
         state === 'correct' && 'border-line',
         state === 'wrong' && 'border-line anim-shake',
         className
@@ -37,14 +37,14 @@ export function Choice({ index, state, onSelect, children, className }: ChoicePr
       style={{
         borderLeftWidth: state === 'correct' || state === 'wrong' ? 2 : 1,
         borderLeftColor:
-          state === 'correct' ? 'var(--signal)' : state === 'wrong' ? 'var(--bad)' : undefined,
+          state === 'correct' ? 'var(--acid)' : state === 'wrong' ? 'var(--bad)' : undefined,
       }}
     >
       {state === 'correct' ? (
-        <Check weight="regular" size={18} color="var(--signal)" aria-hidden="true" />
+        <Check weight="regular" size={18} color="var(--acid)" aria-hidden="true" />
       ) : (
         <span
-          className={cn('t-readout-s', state === 'selected' ? 'text-signal' : 'text-ink-faint')}
+          className={cn('t-readout-s', state === 'selected' ? 'text-acid' : 'text-ink-faint')}
         >
           {label}
         </span>

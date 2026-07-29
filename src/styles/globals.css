@@ -19,28 +19,42 @@
   --color-sunken: var(--bg-sunken);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
-  --color-line-signal: var(--line-signal);
+  --color-line-acid: var(--line-acid);
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
   --color-ink-faint: var(--ink-faint);
   --color-ink-invert: var(--ink-invert);
+
+  /* Мир v2 (DESIGN.md §3): кислота — сигнал действия, небо — только достигнутый результат */
+  --color-acid: var(--acid);
+  --color-acid-deep: var(--acid-deep);
+  --color-acid-dim: var(--acid-dim);
+  --color-sky: var(--sky);
+  --color-sky-dim: var(--sky-dim);
+  --color-rust: var(--rust);
+  --color-rust-dim: var(--rust-dim);
+  --color-bad: var(--bad);
+  --color-bad-dim: var(--bad-dim);
+
+  /* Алиасы совместимости, подлежат удалению вместе с блоком в tokens.css —
+     держат рабочими классы вида bg-signal/text-warn из кода прошлой волны. */
+  --color-line-signal: var(--line-signal);
   --color-signal: var(--signal);
   --color-signal-deep: var(--signal-deep);
   --color-signal-dim: var(--signal-dim);
   --color-signal-glow: var(--signal-glow);
   --color-warn: var(--warn);
   --color-warn-dim: var(--warn-dim);
-  --color-bad: var(--bad);
-  --color-bad-dim: var(--bad-dim);
 
   /* Шрифты и радиусы — имя переменной Tailwind (--font-*, --radius-*) совпадает
      с именем в tokens.css дословно, поэтому здесь литерал, а не var(),
-     иначе получится циклическая CSS-переменная (--font-sans: var(--font-sans)). */
+     иначе получится циклическая CSS-переменная (--font-sans: var(--font-sans)).
+     Радиусы уменьшены (DESIGN.md §5): клетка периодической таблицы почти прямоугольная. */
   --font-sans: 'Onest Variable', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
 
   /* Доп. токен ширины/отступа контента для утилит Tailwind */
   --spacing-gutter: 20px;
@@ -102,47 +116,55 @@ div {
 
 /* ---- Фокус ---- */
 :focus-visible {
-  outline: 2px solid var(--signal);
+  outline: 2px solid var(--acid);
   outline-offset: 2px;
 }
 
-/* ---- Типографическая шкала (DESIGN.md §4) ---- */
+/* ---- Типографическая шкала (DESIGN.md v2 §4) ----
+   Переработана под читаемость: трекинг лейбла снижен с +0.14em до +0.10em
+   (на кириллице широкий трекинг не читался), тело и вторичный текст укрупнены. */
 .t-display-xl {
-  font: 700 2.125rem/1.02 var(--font-sans);
-  letter-spacing: -0.03em;
+  font: 700 2.125rem/1.06 var(--font-sans);
+  letter-spacing: -0.028em;
   text-wrap: balance;
+  max-width: 26ch;
 }
 
 .t-display-l {
-  font: 700 1.75rem/1.06 var(--font-sans);
-  letter-spacing: -0.025em;
+  font: 700 1.75rem/1.1 var(--font-sans);
+  letter-spacing: -0.022em;
   text-wrap: balance;
+  max-width: 26ch;
 }
 
 .t-h1 {
-  font: 600 1.375rem/1.18 var(--font-sans);
-  letter-spacing: -0.02em;
+  font: 600 1.375rem/1.22 var(--font-sans);
+  letter-spacing: -0.018em;
+  text-wrap: balance;
+  max-width: 26ch;
 }
 
 .t-h2 {
-  font: 600 1.125rem/1.28 var(--font-sans);
-  letter-spacing: -0.015em;
+  font: 600 1.125rem/1.32 var(--font-sans);
+  letter-spacing: -0.012em;
+  text-wrap: balance;
+  max-width: 26ch;
 }
 
 .t-body {
-  font: 400 1rem/1.55 var(--font-sans);
-  letter-spacing: -0.005em;
+  font: 400 1.0625rem/1.62 var(--font-sans);
+  letter-spacing: -0.003em;
   max-width: 42ch;
 }
 
 .t-body-s {
-  font: 400 0.875rem/1.5 var(--font-sans);
+  font: 400 0.9375rem/1.55 var(--font-sans);
   letter-spacing: 0;
 }
 
 .t-label {
-  font: 500 0.6875rem/1.2 var(--font-mono);
-  letter-spacing: 0.14em;
+  font: 500 0.75rem/1.25 var(--font-mono);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-faint);
 }
@@ -157,6 +179,12 @@ div {
   font: 500 0.9375rem/1.3 var(--font-mono);
   letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
+}
+
+/* Символ элемента в клетке ElementTile (DESIGN.md §4, §6.1) — моно, крупный, жирный. */
+.t-symbol {
+  font: 700 1.875rem/1 var(--font-mono);
+  letter-spacing: -0.02em;
 }
 
 /* Любые моно-числа — фиксированная ширина цифр, не прыгают при анимации */

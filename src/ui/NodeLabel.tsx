@@ -11,9 +11,9 @@ interface NodeLabelProps {
 
 const DOT_CLASS: Record<NodeStatus, string> = {
   locked: 'bg-ink-faint',
-  active: 'bg-signal',
-  done: 'bg-signal',
-  scanning: 'bg-warn anim-pulse-warn',
+  active: 'bg-acid',
+  done: 'bg-acid',
+  scanning: 'bg-rust anim-pulse-warn',
 };
 
 /** Маркировка узла: `М-01 · АУДИТОРИЯ` + статус-точка (DESIGN.md §6.2). */

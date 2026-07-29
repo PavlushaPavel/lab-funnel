@@ -5,12 +5,22 @@
  * (в брифе нет отдельного явного текста под эти поля, см. итоговый отчёт).
  */
 import type { ModuleCopy } from './types';
+import { LEAK_WEIGHTS } from '../store/funnel';
 import type { ModuleId } from '../store/funnel';
+
+/**
+ * «Атомная масса» клетки элемента (DESIGN.md §6.1) — это процент утечки,
+ * который закрывает модуль. Выводится из LEAK_WEIGHTS, а не вписывается руками:
+ * иначе цифра на клетке разойдётся с реальной арифметикой счётчика утечки.
+ */
+export const moduleMass = (id: ModuleId): number => Math.round(LEAK_WEIGHTS[id] * 100);
 
 export const MODULES: Record<ModuleId, ModuleCopy> = {
   m1: {
     id: 'm1',
     code: 'М-01',
+    number: '01',
+    symbol: 'Ау',
     title: 'АУДИТОРИЯ',
     codeWord: 'БРИФ',
     outcome: 'Понимает, кому продаёт: задачи, боли, страхи, сегменты и антиперсоны, а не просто «мужчины и женщины 18–65».',
@@ -19,6 +29,8 @@ export const MODULES: Record<ModuleId, ModuleCopy> = {
   m2: {
     id: 'm2',
     code: 'М-02',
+    number: '02',
+    symbol: 'Оф',
     title: 'ОФФЕРЫ',
     codeWord: 'ФОРМУЛА',
     outcome: 'Собирает офферы и объявления по формулам, а не сорок минут смотрит на пустое поле.',
@@ -27,6 +39,8 @@ export const MODULES: Record<ModuleId, ModuleCopy> = {
   m3: {
     id: 'm3',
     code: 'М-03',
+    number: '03',
+    symbol: 'Ст',
     title: 'СТРАНИЦА',
     codeWord: 'ENTER',
     outcome: 'Собирает и публикует первую версию посадочной страницы за вечер.',

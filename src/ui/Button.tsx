@@ -20,19 +20,19 @@ interface ButtonProps {
 }
 
 const VARIANT_CLASS: Record<ButtonVariant, string> = {
-  primary: 'bg-signal text-ink-invert',
+  primary: 'bg-acid text-ink-invert',
   secondary: 'bg-transparent text-ink border border-line-strong',
   ghost: 'bg-transparent text-ink',
 };
 
 const VARIANT_PRESS_BG: Record<ButtonVariant, string> = {
-  primary: 'var(--signal-deep)',
+  primary: 'var(--acid-deep)',
   secondary: 'var(--bg-raised)',
   ghost: 'var(--bg-raised)',
 };
 
 const VARIANT_BG: Record<ButtonVariant, string> = {
-  primary: 'var(--signal)',
+  primary: 'var(--acid)',
   secondary: 'transparent',
   ghost: 'transparent',
 };

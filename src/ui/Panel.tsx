@@ -12,9 +12,11 @@ interface PanelProps {
 
 const DOT_CLASS: Record<PanelStatus, string> = {
   locked: 'bg-ink-faint',
-  active: 'bg-signal',
-  done: 'bg-signal',
-  scanning: 'bg-warn anim-pulse-warn',
+  active: 'bg-acid',
+  // done — «этап завершён», не «результат получен» (тот — только у ElementTile/§6.1),
+  // поэтому кислота, а не небо: --sky зарезервирован строго под правило DESIGN.md §2.9.
+  done: 'bg-acid',
+  scanning: 'bg-rust anim-pulse-warn',
 };
 
 /** Панель — базовая поверхность интерфейса. Глубина через верхний блик, не через тень (DESIGN.md §7). */

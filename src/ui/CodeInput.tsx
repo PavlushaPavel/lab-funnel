@@ -52,6 +52,7 @@ export function CodeInput({ length, onSubmit, hint }: CodeInputProps) {
 
   return (
     <div className="grid gap-2">
+      <p className="t-label text-ink-faint">ФОРМУЛА</p>
       <button
         key={shakeTick}
         type="button"
@@ -71,8 +72,8 @@ export function CodeInput({ length, onSubmit, hint }: CodeInputProps) {
               key={i}
               className={cn(
                 'grid h-12 place-items-center rounded-sm border-b-2 text-center uppercase transition-colors',
-                status === 'error' ? 'border-bad' : char ? 'border-signal' : 'border-line',
-                status === 'success' && 'text-signal'
+                status === 'error' ? 'border-bad' : char ? 'border-acid' : 'border-line',
+                status === 'success' && 'text-acid'
               )}
               style={{
                 fontFamily: 'var(--font-mono)',
@@ -83,7 +84,7 @@ export function CodeInput({ length, onSubmit, hint }: CodeInputProps) {
                   status === 'success' ? `${Math.round(i * durations.codeCascade * 1000)}ms` : '0ms',
               }}
             >
-              {char ?? (isCursor && !reduced ? <span className="anim-cursor-blink text-signal">|</span> : '')}
+              {char ?? (isCursor && !reduced ? <span className="anim-cursor-blink text-acid">|</span> : '')}
             </span>
           );
         })}
