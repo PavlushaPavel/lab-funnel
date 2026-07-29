@@ -1,62 +1,43 @@
-import { useEffect, useMemo } from 'react';
-import { motion } from 'motion/react';
-import { Atom, CaretRight } from '@phosphor-icons/react';
+import { useEffect } from 'react';
+import { Readout } from '../../ui/Readout';
 import { Screen } from '../../ui/Screen';
 import { BottomBar } from '../../ui/BottomBar';
 import { Button } from '../../ui/Button';
-import { Well } from '../../ui/Well';
-import { Readout } from '../../ui/Readout';
 import { Bullets } from '../../ui/Bullets';
 import { Prose } from '../../ui/Prose';
 import { Divider } from '../../ui/Divider';
-import { ElementTile } from '../../ui/ElementTile';
 import { SCREENS } from '../../content/screens';
-import { MODULES, moduleMass } from '../../content/modules';
 import { useFunnelStore } from '../../store/funnel';
-import type { ModuleId } from '../../store/funnel';
 import { track } from '../../lib/analytics';
 import { haptics } from '../../lib/telegram';
-import { listStagger, listItem, useReducedMotionSafe } from '../../lib/motion';
 
 const copy = SCREENS.offer;
 const bullets = copy.bullets ?? [];
-const CHAIN_MODULE_IDS: ModuleId[] = ['m1', 'm2', 'm3'];
 
 /**
- * Группировка 19 пунктов «Что внутри» по смыслу — структурное решение вёрстки, не новый
- * копирайт: заголовки групп авторские (моно-лейблы), сам текст пунктов — срезы того же
- * массива src/content/screens.ts::SCREENS.offer.bullets, дословно и по порядку брифа.
+ * Группировка 19 пунктов «Что внутри» по смыслу (заказчик, аудит продукта: экран читался как
+ * отчёт лаборатории) — структурное решение вёрстки, не новый копирайт: заголовки групп
+ * авторские (моно-лейблы этого агента), сам текст пунктов — срезы того же массива
+ * src/content/screens.ts::SCREENS.offer.bullets, дословно и по порядку брифа.
  */
 const BULLET_GROUPS: { heading: string; items: string[] }[] = [
-  { heading: 'СЕРВИСЫ', items: bullets.slice(0, 4) },
-  { heading: 'CODEX И СКИЛЛЫ', items: bullets.slice(4, 8) },
-  { heading: 'СБОРКА СТРАНИЦЫ', items: bullets.slice(8, 14) },
-  { heading: 'ФИНИШ', items: bullets.slice(14, 19) },
+  { heading: 'Доступы и сервисы', items: bullets.slice(0, 4) },
+  { heading: 'Codex и скиллы', items: bullets.slice(4, 8) },
+  { heading: 'Сборка и исправление ошибок', items: bullets.slice(8, 15) },
+  { heading: 'Публикация и работа с клиентом', items: bullets.slice(15, 19) },
 ];
 
 /**
- * Цепочка результата разбирается из дословной строки src/content/screens.ts::SCREENS.offer.quote
- * («…путь: анализ → оффер → структура → страница → публикация.») — не переписана руками,
- * чтобы текст остался единственно в content/*, а UI лишь визуализирует перечисление.
- */
-function parseResultChain(quote: string): string[] {
-  const afterColon = quote.split(':')[1] ?? '';
-  return afterColon
-    .replace(/\.$/, '')
-    .split('→')
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-
-/**
- * Продающий экран (`offer`) — фаза ПЛАЧУ. Единственный на весь экран сигнальный CTA — кнопка
- * оплаты; вторая кнопка ведёт к автопродавцу, а не конкурирует визуально (DESIGN.md §3).
+ * Продающий экран (`offer`) — фаза ПЛАЧУ. Читается как продолжение живой демонстрации
+ * (короткая связка сверху → четыре блока того, что внутри → цена → обоснование → кнопки),
+ * а не как каталог модулей или отчёт лаборатории: убраны колодец показаний вокруг цены
+ * (обычный Well/Readout заменён на крупную цену без приборной рамки) и карточки «пройденных
+ * модулей» с цепочкой-визуализацией результата — тот же приборный слой, что и везде в
+ * продукте, снесённый аудитом. Единственный на весь экран сигнальный CTA — кнопка оплаты;
+ * вторая кнопка ведёт к автопродавцу, а не конкурирует визуально (DESIGN.md §3).
  */
 export function OfferScreen() {
   const go = useFunnelStore((s) => s.go);
-  const reduced = useReducedMotionSafe();
-
-  const resultChain = useMemo(() => parseResultChain(copy.quote ?? ''), []);
 
   useEffect(() => {
     track('offer_view');
@@ -79,13 +60,17 @@ export function OfferScreen() {
         <div className="grid gap-3">
           <h1 className="t-display-l text-ink">{copy.title}</h1>
           {copy.body?.[0] && <p className="t-body text-ink-muted">{copy.body[0]}</p>}
+          {/* Связка с демонстрацией, которую человек только что прошёл — не из брифа, короткая
+              и нейтральная формулировка этого экрана, а не новый слой копирайта. */}
+          <p className="t-body text-ink-muted">
+            Я показал принцип на подготовленной системе. Чтобы повторять самому — на своих
+            проектах, с чужими данными и чужими правками — нужна техничка.
+          </p>
         </div>
 
         <div className="grid gap-1">
           <p className="t-label text-ink-faint">СТОИМОСТЬ ПРАКТИКУМА</p>
-          <Well>
-            <Readout value={copy.price ?? 0} suffix="₽" size="lg" />
-          </Well>
+          <Readout value={copy.price ?? 0} suffix="₽" size="lg" />
         </div>
 
         <Divider />
@@ -109,55 +94,12 @@ export function OfferScreen() {
           </div>
         )}
 
-        <div className="grid gap-4">
-          <p className="t-label text-ink-faint">ГЛАВНЫЙ РЕЗУЛЬТАТ</p>
-
-          {/* Три полученных элемента — доказательство пройденного пути, не декорация:
-              те же клетки, что горели --sky на m1/m2/m3-code и сходились в ChainScreen (DESIGN.md §6.1). */}
-          <div className="grid grid-flow-col items-center justify-start gap-2" style={{ overflowX: 'auto' }}>
-            {CHAIN_MODULE_IDS.map((id) => (
-              <ElementTile
-                key={id}
-                number={MODULES[id].number}
-                symbol={MODULES[id].symbol}
-                name={MODULES[id].title}
-                mass={moduleMass(id)}
-                state="obtained"
-                size="sm"
-              />
-            ))}
+        {copy.quote && (
+          <div className="grid gap-2">
+            <p className="t-label text-ink-faint">ГЛАВНЫЙ РЕЗУЛЬТАТ</p>
+            <p className="t-body text-ink">{copy.quote}</p>
           </div>
-
-          {/* Цепочка результата — свёрстана как отголосок панели «СОЕДИНЕНИЕ» из синтеза
-              на экране chain (тот же --sky-контур: результат уже получен, не обещание). */}
-          <div
-            className="relative grid gap-3 rounded-lg border p-3"
-            style={{ borderColor: 'var(--sky)', background: 'var(--sky-dim)' }}
-          >
-            <div className="flex items-center gap-2">
-              <Atom weight="regular" size={16} className="text-sky" aria-hidden="true" />
-              <span className="t-label text-sky">СИНТЕЗ ЗАВЕРШЁН</span>
-            </div>
-            <motion.div
-              className="grid grid-flow-col items-center justify-start gap-1"
-              style={{ overflowX: 'auto' }}
-              variants={reduced ? undefined : listStagger}
-              initial={reduced ? undefined : 'hidden'}
-              animate={reduced ? undefined : 'show'}
-            >
-              {resultChain.map((stage, i) => (
-                <motion.div key={stage} className="contents" variants={reduced ? undefined : listItem}>
-                  <span className="whitespace-nowrap rounded-md border border-line-strong bg-panel px-3 py-2 t-body-s text-ink">
-                    {stage}
-                  </span>
-                  {i < resultChain.length - 1 && (
-                    <CaretRight weight="regular" size={12} className="text-ink-faint" aria-hidden="true" />
-                  )}
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </div>
+        )}
 
         <div className="grid gap-3">
           {/* Обоснование цены — дословно, body[1..]: «Стоимость…», «Не бесплатно.» и далее. */}

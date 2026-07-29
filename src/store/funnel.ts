@@ -1,5 +1,7 @@
 /**
- * Центральный стор воронки. ARCHITECTURE.md §3 — сигнатуры и формулы неизменны.
+ * Центральный стор воронки. ARCHITECTURE.md §3 — сигнатуры неизменны.
+ * Денежная «утечка» (leakBase/LEAK_WEIGHTS/selectLeak*) удалена как выдуманная экономика,
+ * подогнанная под цену продукта (аудит продукта, снос слоя геймификации) — см. отчёт волны сноса.
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -21,21 +23,18 @@ export type StepId =
   | 'm1-intro'
   | 'm1-video'
   | 'm1-code'
-  | 'm1-decoder'
   | 'm1-detector'
   | 'm1-practice'
   | 'bridge-1'
   | 'm2-intro'
   | 'm2-video'
   | 'm2-code'
-  | 'm2-forge'
   | 'm2-practice'
   | 'bridge-2'
   | 'm3-intro'
   | 'm3-video'
   | 'm3-code'
   | 'm3-beforeafter'
-  | 'chain'
   | 'final-video'
   | 'offer'
   | 'autoseller'
@@ -54,7 +53,7 @@ export interface FunnelState {
   videos: Record<string, number>; // videoId -> доля просмотра 0..1
   mechanics: Record<string, boolean>; // ключ механики -> завершена
   practice: Record<string, string>; // id контрольного вопроса -> id ответа
-  leakBase: number; // ₽/мес, 0 пока нет результата
+  practiceInput: Record<string, string>; // id практики -> реальный текст, вставленный человеком
   startedAt: number;
 
   // actions
@@ -65,34 +64,18 @@ export interface FunnelState {
   /** Текущий вопрос теста. Значение зажимается в границы массива вопросов. */
   setQuizIndex(i: number): void;
   answerQuiz(qIndex: number, optIndex: number): void;
-  finishQuiz(): void; // считает score, tier, leakBase
+  finishQuiz(): void; // считает score, tier
+  /** Верный код открывает доступ к практике модуля. НЕ засчитывает модуль пройденным. */
   unlockCode(m: ModuleId): void;
+  /** Модуль засчитан пройденным — только после реальной практики (ARCHITECTURE.md §3). */
+  completeModule(m: ModuleId): void;
   setVideoProgress(id: string, p: number): void;
   completeMechanic(key: string): void;
   setPractice(id: string, answer: string): void;
+  /** Реальный ввод человека (результат работы с ассистентом) — не чекбокс, а факт (PRODUCT.md §3.4). */
+  setPracticeInput(id: string, value: string): void;
   reset(): void;
 }
-
-/** Базы утечки ₽/мес по специализации (PRODUCT.md §3.1). */
-const SPEC_BASE: Record<Spec, number> = {
-  direct: 85000,
-  avito: 60000,
-  target: 75000,
-  marketing: 110000,
-  business: 140000,
-  newbie: 40000,
-  unknown: 70000,
-};
-
-/**
- * Доля утечки, которую закрывает каждый модуль (PRODUCT.md §3.1).
- * Экспортирована — это единственный источник весов; экраны (напр. мосты между модулями),
- * которым нужно восстановить «прошлое» значение утечки, обязаны импортировать её отсюда,
- * а не заводить локальную копию числа.
- */
-export const LEAK_WEIGHTS: Record<ModuleId, number> = { m1: 0.28, m2: 0.22, m3: 0.34 };
-
-const MODULE_IDS: ModuleId[] = ['m1', 'm2', 'm3'];
 
 function initialState(): Omit<
   FunnelState,
@@ -104,9 +87,11 @@ function initialState(): Omit<
   | 'answerQuiz'
   | 'finishQuiz'
   | 'unlockCode'
+  | 'completeModule'
   | 'setVideoProgress'
   | 'completeMechanic'
   | 'setPractice'
+  | 'setPracticeInput'
   | 'reset'
 > {
   return {
@@ -122,7 +107,7 @@ function initialState(): Omit<
     videos: {},
     mechanics: {},
     practice: {},
-    leakBase: 0,
+    practiceInput: {},
     startedAt: Date.now(),
   };
 }
@@ -176,14 +161,20 @@ export const useFunnelStore = create<FunnelState>()(
             }
           }
           const tier: Tier = score <= 2 ? 'low' : score <= 4 ? 'mid' : 'high';
-          const spec = s.spec ?? 'unknown';
-          const leakBase = Math.round((SPEC_BASE[spec] * (1 + (6 - score) * 0.18)) / 1000) * 1000;
-          return { score, tier, leakBase };
+          return { score, tier };
         }),
 
+      // Код открывает доступ к практике модуля. Модуль ещё не пройден — это враньё о
+      // результате: человек только что посмотрел видео и угадал слово, а не сделал работу.
       unlockCode: (m) =>
         set((s) => ({
           codes: { ...s.codes, [m]: true },
+        })),
+
+      // Вызывается только после реальной практики (ассистент + контрольный вопрос у m1/m2,
+      // механика BeforeAfter у m3) — ARCHITECTURE.md §3.
+      completeModule: (m) =>
+        set((s) => ({
           modules: { ...s.modules, [m]: true },
         })),
 
@@ -202,6 +193,11 @@ export const useFunnelStore = create<FunnelState>()(
           practice: { ...s.practice, [id]: answer },
         })),
 
+      setPracticeInput: (id, value) =>
+        set((s) => ({
+          practiceInput: { ...s.practiceInput, [id]: value },
+        })),
+
       reset: () => set({ ...initialState() }),
     }),
     {
@@ -209,26 +205,14 @@ export const useFunnelStore = create<FunnelState>()(
       version: 1,
       // персистим только данные, экшены (функции) в сериализацию не попадают
       partialize: (s) => {
-        const { step, history, spec, quizIndex, quizAnswers, score, tier, codes, modules, videos, mechanics, practice, leakBase, startedAt } = s;
-        return { step, history, spec, quizIndex, quizAnswers, score, tier, codes, modules, videos, mechanics, practice, leakBase, startedAt };
+        const { step, history, spec, quizIndex, quizAnswers, score, tier, codes, modules, videos, mechanics, practice, practiceInput, startedAt } = s;
+        return { step, history, spec, quizIndex, quizAnswers, score, tier, codes, modules, videos, mechanics, practice, practiceInput, startedAt };
       },
     }
   )
 );
 
 // ---- Селекторы ----
-
-/** Утечка сейчас — с учётом закрытых (разблокированных) модулей. */
-export const selectLeakCurrent = (s: FunnelState): number => {
-  const closed = MODULE_IDS.reduce((sum, m) => sum + (s.modules[m] ? LEAK_WEIGHTS[m] : 0), 0);
-  return Math.round(s.leakBase * (1 - closed));
-};
-
-/** Процент утечки, закрытый разблокированными модулями (0..100). */
-export const selectLeakClosedPct = (s: FunnelState): number => {
-  const closed = MODULE_IDS.reduce((sum, m) => sum + (s.modules[m] ? LEAK_WEIGHTS[m] : 0), 0);
-  return Math.round(closed * 100);
-};
 
 /** Прогресс калибровки 0..1 по позиции текущего шага в маршруте. */
 export const selectProgress = (s: FunnelState): number => progressOf(s.step);

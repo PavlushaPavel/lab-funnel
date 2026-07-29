@@ -19,7 +19,7 @@ type PlayStatus = 'idle' | 'playing' | 'done';
 
 const STATUS_LABEL: Record<PlayStatus, string> = {
   idle: 'НЕ ПРОСМОТРЕНО',
-  playing: 'ИДЁТ',
+  playing: 'ПРОСМОТР ИДЁТ',
   done: 'ПРОСМОТРЕНО',
 };
 

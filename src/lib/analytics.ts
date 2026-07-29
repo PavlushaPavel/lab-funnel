@@ -21,7 +21,6 @@ export type EventName =
   | 'assistant_open'
   | 'practice_complete'
   | 'mechanic_complete'
-  | 'chain_reveal'
   | 'offer_view'
   | 'autoseller_open'
   | 'objection_select'

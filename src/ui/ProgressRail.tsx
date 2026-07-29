@@ -5,7 +5,8 @@ import { TickRail } from './TickRail';
  * Верхний рельс: сама читает стор (ARCHITECTURE.md §7 ProgressRail).
  * Показывает ТОЛЬКО долю пройденного пути — фазы воронки (ЗНАЮ/ХОЧУ/ВЕРЮ/ПЛАЧУ) пользователю
  * не показываются никогда (DESIGN.md §2.1, PRODUCT.md §2): это внутренняя механика прогрева.
- * Вместо фаз — счётчик полученных элементов (клеток ElementTile) вида «1/3».
+ * Вместо фаз — счётчик пройденных модулей вида «1/3» (по `modules`, не по `codes` — коду
+ * доступа модуль пока не засчитан пройденным, ARCHITECTURE.md §3).
  */
 export function ProgressRail() {
   const progress = useFunnelStore(selectProgress);

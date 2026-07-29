@@ -6,9 +6,9 @@ import { Button } from '../../ui/Button';
 import { Panel } from '../../ui/Panel';
 import { Quote } from '../../ui/Quote';
 import { VideoBlock } from '../../ui/VideoBlock';
-import { ElementTile } from '../../ui/ElementTile';
+import { ModuleBadge } from '../../ui/ModuleBadge';
 import { getVideo } from '../../content/video';
-import { MODULES, moduleMass } from '../../content/modules';
+import { MODULES } from '../../content/modules';
 import { useFunnelStore } from '../../store/funnel';
 import { track } from '../../lib/analytics';
 import { haptics } from '../../lib/telegram';
@@ -31,8 +31,8 @@ const STAKE_PHRASE = 'После этого видео: «Я теперь мог
 
 /**
  * Видео модуля 3 (`m3-video`) — «Как из анализа ЦА и офферов собрать рабочую посадочную
- * страницу». Модуль ещё заперт (код вводится следующим экраном), поэтому клетка модуля
- * остаётся в состоянии 'locked' (DESIGN.md §6.1).
+ * страницу». Модуль ещё заперт (код вводится следующим экраном), поэтому карточка модуля
+ * остаётся в состоянии 'locked'.
  *
  * Экран пустой (PRODUCT.md §4-БИС): обложка, хронометраж/статус (несёт VideoBlock), одна
  * фраза-ставка и предупреждение про ключевое слово — без расшифровки и пересказа ролика.
@@ -75,14 +75,7 @@ export function M3VideoScreen() {
     <Screen id="m3-video" phase="believe">
       <div className="grid grid-cols-[1fr_auto] items-start gap-4">
         <h1 className="t-display-l text-ink">{video.title}</h1>
-        <ElementTile
-          number={module3.number}
-          symbol={module3.symbol}
-          name={module3.title}
-          mass={moduleMass('m3')}
-          state="locked"
-          size="sm"
-        />
+        <ModuleBadge code={module3.code} title={module3.title} state="locked" size="sm" />
       </div>
 
       <VideoBlock id={VIDEO_ID} onProgress={handleProgress} />

@@ -55,12 +55,14 @@
       Choice.tsx  ChoiceList.tsx  CodeInput.tsx  Readout.tsx  Well.tsx
       TickRail.tsx  ProgressRail.tsx  Grain.tsx  ScanLine.tsx
       Divider.tsx  Quote.tsx  Bullets.tsx  Chip.tsx  VideoBlock.tsx  Prose.tsx
+      ModuleBadge.tsx           # статус модуля (заперт/проверяется/открыт), без химии
     mechanics/
-      BriefDecoder.tsx  BullshitDetector.tsx  LeakScanner.tsx
-      FormulaForge.tsx  BeforeAfter.tsx  ModuleChain.tsx
+      BullshitDetector.tsx  LeakScanner.tsx  BeforeAfter.tsx  TraceChain.tsx
+      # BriefDecoder/FormulaForge/ModuleChain сняты вместе со снесёнными шагами m1-decoder/
+      # m2-forge/chain — дублировали то, что человек уже видел в видео (см. §3 врезку)
     features/
       intro/  spec/  diagnostics/  contract/
-      module1/  module2/  module3/  chain/  offer/  autoseller/
+      module1/  module2/  module3/  final/  offer/  autoseller/
       prefreim/                # отдельный лонгрид-маршрут
 ```
 
@@ -83,10 +85,10 @@ export type Phase = 'know'|'want'|'believe'|'pay';
 export type StepId =
   | 'intro'|'spec'|'diag-intro'|'quiz'|'result'
   | 'contract'
-  | 'm1-intro'|'m1-video'|'m1-code'|'m1-decoder'|'m1-detector'|'m1-practice'|'bridge-1'
-  | 'm2-intro'|'m2-video'|'m2-code'|'m2-forge'|'m2-practice'|'bridge-2'
+  | 'm1-intro'|'m1-video'|'m1-code'|'m1-detector'|'m1-practice'|'bridge-1'
+  | 'm2-intro'|'m2-video'|'m2-code'|'m2-practice'|'bridge-2'
   | 'm3-intro'|'m3-video'|'m3-code'|'m3-beforeafter'
-  | 'chain'|'final-video'
+  | 'final-video'
   | 'offer'|'autoseller'|'checkout';
 
 export interface FunnelState {
@@ -97,12 +99,12 @@ export interface FunnelState {
   quizAnswers: Record<number, number>;     // индекс вопроса -> индекс варианта
   score: number;                           // 0..6
   tier: Tier | null;
-  codes: Record<ModuleId, boolean>;
-  modules: Record<ModuleId, boolean>;
+  codes: Record<ModuleId, boolean>;        // код введён верно — открыт доступ к практике
+  modules: Record<ModuleId, boolean>;      // практика реально выполнена — модуль засчитан
   videos: Record<string, number>;          // videoId -> доля просмотра 0..1
   mechanics: Record<string, boolean>;      // ключ механики -> завершена
   practice: Record<string, string>;        // id контрольного вопроса -> id ответа
-  leakBase: number;                        // ₽/мес, 0 пока нет результата
+  practiceInput: Record<string, string>;   // id практики -> реальный текст, вставленный человеком
   startedAt: number;
 
   // actions
@@ -112,32 +114,53 @@ export interface FunnelState {
   setSpec(s: Spec): void;
   setQuizIndex(i: number): void;           // текущий вопрос, зажимается в границы массива
   answerQuiz(qIndex: number, optIndex: number): void;
-  finishQuiz(): void;                      // считает score, tier, leakBase
-  unlockCode(m: ModuleId): void;
+  finishQuiz(): void;                      // считает score, tier
+  unlockCode(m: ModuleId): void;           // ставит ТОЛЬКО codes[m] — открывает доступ к практике
+  completeModule(m: ModuleId): void;       // ставит modules[m] — только после реальной практики
   setVideoProgress(id: string, p: number): void;
   completeMechanic(key: string): void;
   setPractice(id: string, answer: string): void;
+  setPracticeInput(id: string, value: string): void; // реальный текст практики, не чекбокс-театр
   reset(): void;
 }
 ```
 
 Селекторы (экспортировать из того же файла):
 ```ts
-export const selectLeakCurrent: (s: FunnelState) => number;  // с учётом закрытых модулей
-export const selectLeakClosedPct: (s: FunnelState) => number;
 export const selectProgress: (s: FunnelState) => number;      // 0..1
 export const selectPhase: (s: FunnelState) => Phase;
 ```
 
 Персист: ключ `lab-funnel-v1`, версия `1`, сохраняются все поля кроме функций.
 
-**Формулы (реализовать буквально):**
+**Формула (реализовать буквально):**
 ```
 tier:  score <= 2 -> 'low'   |  score <= 4 -> 'mid'   |  score >= 5 -> 'high'
-leakBase = round( SPEC_BASE[spec] * (1 + (6 - score) * 0.18) / 1000 ) * 1000
-LEAK_WEIGHTS = { m1: 0.28, m2: 0.22, m3: 0.34 }
-leakCurrent  = leakBase * (1 - сумма весов разблокированных модулей)
 ```
+
+**`codes` vs `modules` — не одно и то же (аудит продукта, снос ложного зачёта модуля):**
+- `unlockCode(m)` вызывается на экране ввода кода (`m1-code`/`m2-code`/`m3-code`) сразу после
+  верного слова. Ставит **только** `codes[m] = true`. Это открывает доступ к практике модуля —
+  не более того.
+- `completeModule(m)` вызывается **только** экраном реальной практики, после того как человек
+  её выполнил: у `m1-practice`/`m2-practice` реальная работа — не чекбокс-чеклист «что делаешь
+  по пути» (было театром, приложение не знало, сделал ли человек хоть что-то), а свободный
+  текстовый ввод результата, полученного у ассистента (`setPracticeInput`, ≥15 символов не
+  считая пробелов) плюс ответ на контрольный вопрос практики; `m3-beforeafter` — после
+  завершения механики `BeforeAfter`. Ставит `modules[m] = true`.
+- `practiceInput` персистится вместе с остальным прогрессом (см. `partialize`) — это то же
+  доказательство работы, что и `practice`/`mechanics`, только произвольным текстом, а не id
+  варианта.
+- Раньше `unlockCode` ставил оба поля сразу — модуль засчитывался пройденным по факту
+  угадывания кодового слова, до всякой практики. Это враньё о результате, поэтому сигнатуры
+  разведены. `ProgressRail` (счётчик «N/3») и любой другой код, которому нужен факт «модуль
+  реально пройден», обязаны читать `modules`, а не `codes`.
+
+Ранее здесь была денежная «утечка» (`leakBase`, `LEAK_WEIGHTS`, `selectLeakCurrent`,
+`selectLeakClosedPct`) — формула `SPEC_BASE[spec] * (1 + (6 - score) * 0.18)` была выдуманной,
+подогнанной под цену продукта, и выдавала себя за доказательство. Снесена целиком вместе с
+денежным счётчиком на экранах result/bridge-1/bridge-2/chain (аудит продукта). `chain` как шаг
+и весь `store`-контракт этих полей не существуют.
 
 ---
 
@@ -171,7 +194,7 @@ export type EventName =
   | 'prefreim_view'|'app_open'|'spec_select'|'quiz_start'|'quiz_answer'|'quiz_complete'
   | 'quiz_result'|'video_start'|'video_progress'|'video_complete'|'code_submit'
   | 'code_success'|'code_fail'|'assistant_open'|'practice_complete'|'mechanic_complete'
-  | 'chain_reveal'|'offer_view'|'autoseller_open'|'objection_select'
+  | 'offer_view'|'autoseller_open'|'objection_select'
   | 'checkout_click'|'purchase_success';
 
 export function track(event: EventName, payload?: Record<string, unknown>): void;
@@ -205,7 +228,7 @@ export function useReducedMotionSafe(): boolean;
 <Screen id={StepId} label?="М-01 · АУДИТОРИЯ" phase?={Phase}>{children}</Screen>
 
 // BottomBar.tsx — липкая нижняя панель с safe-area
-<BottomBar hint?="ОЦЕНКА. НЕ ОБЕЩАНИЕ."><Button .../></BottomBar>
+<BottomBar hint?={string}><Button .../></BottomBar>
 
 <Button variant="primary"|"secondary"|"ghost" size?="md"|"sm"
         onClick disabled? loading? icon?={ReactNode} full?={boolean}>Текст</Button>

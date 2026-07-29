@@ -6,9 +6,9 @@ import { Button } from '../../ui/Button';
 import { Prose } from '../../ui/Prose';
 import { CodeInput } from '../../ui/CodeInput';
 import { ScanLine } from '../../ui/ScanLine';
-import { ElementTile } from '../../ui/ElementTile';
-import type { ElementState } from '../../ui/ElementTile';
-import { MODULES, moduleMass } from '../../content/modules';
+import { ModuleBadge } from '../../ui/ModuleBadge';
+import type { ModuleBadgeState } from '../../ui/ModuleBadge';
+import { MODULES } from '../../content/modules';
 import { isVideoPlaceholder } from '../../content/video';
 import type { ScreenCopy } from '../../content/types';
 import { useFunnelStore } from '../../store/funnel';
@@ -26,25 +26,27 @@ interface CodeStepScreenProps {
 
 type CodeState = 'idle' | 'error' | 'success';
 
-/** Подпись под клеткой по фазе синтеза — единственное текстовое сопровождение состояния. */
-const TILE_LABEL: Record<ElementState, string> = {
-  locked: 'ЖДЁТ ФОРМУЛЫ',
-  active: 'ИДЁТ СИНТЕЗ…',
-  obtained: 'ПОЛУЧЕНО',
+/** Подпись под карточкой модуля по фазе проверки кода — единственное текстовое сопровождение. */
+const TILE_LABEL: Record<ModuleBadgeState, string> = {
+  locked: 'Ждём слово',
+  active: 'Проверяем',
+  done: 'Доступ открыт',
 };
-const TILE_LABEL_CLASS: Record<ElementState, string> = {
+const TILE_LABEL_CLASS: Record<ModuleBadgeState, string> = {
   locked: 'text-ink-faint',
   active: 'text-acid',
-  obtained: 'text-sky',
+  done: 'text-sky',
 };
 
 /**
  * Общий экран ввода кода модулей 1/2 + сцена разблокировки (ARCHITECTURE.md §7 CodeInput,
- * PRODUCT.md §3.3/§3.5, DESIGN.md §6.3). CodeInput сам умеет слоты/shake/каскад/haptics —
- * этот экран сравнивает код, ведёт стор и раскручивает получение клетки элемента:
- * 'locked' → 'active' (верный код, идёт замер) → 'obtained' (--sky, вещество получено).
- * Переход собран из фаз, а не одной анимацией — клетка сама пульсирует при смене состояния
- * (ElementTile), плюс отдельно проявляется outcome-текст с задержкой после неё.
+ * PRODUCT.md §3.3/§3.5). CodeInput сам умеет слоты/shake/каскад/haptics — этот экран
+ * сравнивает код, ведёт стор и раскручивает открытие доступа к практике модуля:
+ * 'locked' → 'active' (код принят, идёт проверка) → 'done' (--sky, доступ открыт).
+ * Верный код открывает ТОЛЬКО доступ к практике (store::unlockCode) — модуль засчитывается
+ * пройденным (store::completeModule) позже, экраном практики, только после реальной работы.
+ * Переход собран из фаз, а не одной анимацией — карточка модуля сама пульсирует при смене
+ * состояния (ModuleBadge), плюс отдельно проявляется outcome-текст с задержкой после неё.
  */
 export function CodeStepScreen({ stepId, moduleId, phase, copy }: CodeStepScreenProps) {
   const next = useFunnelStore((s) => s.next);
@@ -92,9 +94,9 @@ export function CodeStepScreen({ stepId, moduleId, phase, copy }: CodeStepScreen
     next();
   };
 
-  // Клетка: заперта, пока код не введён верно; во время замера — активна (--acid);
-  // получена — только после того, как каскад слотов и скан-линия доиграли (--sky).
-  const tileState: ElementState = unlocked ? 'obtained' : state === 'success' ? 'active' : 'locked';
+  // Карточка модуля: заперта, пока код не введён верно; во время проверки — активна (--acid);
+  // доступ открыт — только после того, как каскад слотов и скан-линия доиграли (--sky).
+  const tileState: ModuleBadgeState = unlocked ? 'done' : state === 'success' ? 'active' : 'locked';
 
   return (
     <Screen id={stepId} phase={phase}>
@@ -140,21 +142,14 @@ export function CodeStepScreen({ stepId, moduleId, phase, copy }: CodeStepScreen
         )}
       </AnimatePresence>
 
-      {/* Сцена получения вещества (DESIGN.md §6.1/§6.3): клетка модуля проходит фазами
-          заперта → идёт синтез → получена, и только тогда открывается outcome и кнопка «Дальше». */}
+      {/* Сцена открытия доступа: карточка модуля проходит фазами заперта → проверяем →
+          доступ открыт, и только тогда открывается outcome и кнопка «Дальше». */}
       <div className="grid justify-items-center gap-3 py-2">
-        <ElementTile
-          number={module.number}
-          symbol={module.symbol}
-          name={module.title}
-          mass={moduleMass(module.id)}
-          state={tileState}
-          size="lg"
-        />
+        <ModuleBadge code={module.code} title={module.title} state={tileState} size="lg" />
         <span className={`t-label ${TILE_LABEL_CLASS[tileState]}`}>{TILE_LABEL[tileState]}</span>
 
-        {/* Пока клетка «активна» (идёт замер) — держим successTitle из копирайта; как только
-            клетка «получена» — сменяем на outcome модуля. Два разных бита, а не один текст. */}
+        {/* Пока карточка «активна» (идёт проверка) — держим successTitle из копирайта; как
+            только доступ открыт — сменяем на outcome модуля. Два разных бита, а не один текст. */}
         <AnimatePresence mode="wait">
           {tileState === 'active' && copy.successTitle && (
             <motion.p
@@ -168,7 +163,7 @@ export function CodeStepScreen({ stepId, moduleId, phase, copy }: CodeStepScreen
               {copy.successTitle}
             </motion.p>
           )}
-          {tileState === 'obtained' && (
+          {tileState === 'done' && (
             <motion.p
               key="outcome"
               className="t-body text-ink text-center"

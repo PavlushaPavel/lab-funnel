@@ -52,7 +52,7 @@ export function CodeInput({ length, onSubmit, hint }: CodeInputProps) {
 
   return (
     <div className="grid gap-2">
-      <p className="t-label text-ink-faint">ФОРМУЛА</p>
+      <p className="t-label text-ink-faint">Ключевое слово</p>
       <button
         key={shakeTick}
         type="button"

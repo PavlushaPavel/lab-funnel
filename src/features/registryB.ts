@@ -17,14 +17,12 @@ type RegistryBStep = Extract<
   | 'm1-intro'
   | 'm1-video'
   | 'm1-code'
-  | 'm1-decoder'
   | 'm1-detector'
   | 'm1-practice'
   | 'bridge-1'
   | 'm2-intro'
   | 'm2-video'
   | 'm2-code'
-  | 'm2-forge'
   | 'm2-practice'
   | 'bridge-2'
 >;
@@ -35,8 +33,6 @@ const loaders = {
   'm1-intro': () => import('./module1/M1IntroScreen').then((m) => ({ default: m.M1IntroScreen })),
   'm1-video': () => import('./module1/M1VideoScreen').then((m) => ({ default: m.M1VideoScreen })),
   'm1-code': () => import('./module1/M1CodeScreen').then((m) => ({ default: m.M1CodeScreen })),
-  'm1-decoder': () =>
-    import('./module1/M1DecoderScreen').then((m) => ({ default: m.M1DecoderScreen })),
   'm1-detector': () =>
     import('./module1/M1DetectorScreen').then((m) => ({ default: m.M1DetectorScreen })),
   'm1-practice': () =>
@@ -45,7 +41,6 @@ const loaders = {
   'm2-intro': () => import('./module2/M2IntroScreen').then((m) => ({ default: m.M2IntroScreen })),
   'm2-video': () => import('./module2/M2VideoScreen').then((m) => ({ default: m.M2VideoScreen })),
   'm2-code': () => import('./module2/M2CodeScreen').then((m) => ({ default: m.M2CodeScreen })),
-  'm2-forge': () => import('./module2/M2ForgeScreen').then((m) => ({ default: m.M2ForgeScreen })),
   'm2-practice': () =>
     import('./module2/M2PracticeScreen').then((m) => ({ default: m.M2PracticeScreen })),
   'bridge-2': () => import('./module2/Bridge2Screen').then((m) => ({ default: m.Bridge2Screen })),

@@ -13,7 +13,7 @@ interface PanelProps {
 const DOT_CLASS: Record<PanelStatus, string> = {
   locked: 'bg-ink-faint',
   active: 'bg-acid',
-  // done — «этап завершён», не «результат получен» (тот — только у ElementTile/§6.1),
+  // done — «этап завершён», не «доступ открыт» (тот — только у ModuleBadge/§6.1),
   // поэтому кислота, а не небо: --sky зарезервирован строго под правило DESIGN.md §2.9.
   done: 'bg-acid',
   scanning: 'bg-rust anim-pulse-warn',

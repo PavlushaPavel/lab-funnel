@@ -1,14 +1,12 @@
-import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { Screen } from '../../ui/Screen';
 import { BottomBar } from '../../ui/BottomBar';
 import { Button } from '../../ui/Button';
-import { Well } from '../../ui/Well';
-import { Readout } from '../../ui/Readout';
+import { Panel } from '../../ui/Panel';
 import { Bullets } from '../../ui/Bullets';
 import { SCREENS } from '../../content/screens';
-import { useFunnelStore, selectLeakCurrent, selectLeakClosedPct, LEAK_WEIGHTS } from '../../store/funnel';
-import { formatRub } from '../../lib/format';
+import { MODULES } from '../../content/modules';
+import { useFunnelStore } from '../../store/funnel';
 import { haptics } from '../../lib/telegram';
 import { listStagger, listItem, useReducedMotionSafe } from '../../lib/motion';
 
@@ -16,33 +14,15 @@ const copy = SCREENS['bridge-2'];
 
 /**
  * Мост между модулями 2 и 3 (`bridge-2`, BRIEF.md §13). Усиление ставки: рубленый текст
- * с reveal по абзацам + счётчик утечки, уменьшившийся за счёт закрытого М-02 (PRODUCT.md §2/§3.1).
- * «Было» — утечка с закрытым только М-01 (М-02 ещё не закрыт), «стало» — текущее значение
- * из стора (selectLeakCurrent), которое уже учитывает оба закрытых модуля. Вес М-01 берётся
- * из LEAK_WEIGHTS, экспортированной из store/funnel.ts — единственный источник этих чисел.
+ * с reveal по абзацам + качественный сдвиг (что человек теперь умеет и чего ещё не умеет),
+ * вместо денежного счётчика утечки (аудит продукта: снос выдуманной экономики).
  * В брифе для этого экрана два маркированных списка — интерливинг сохранён по месту в тексте
  * («Теперь ты:» → первая четвёрка, «А ты:» → вторая четвёрка), как и решил контент-агент
  * (см. комментарий в content/screens.ts).
  */
 export function Bridge2Screen() {
   const next = useFunnelStore((s) => s.next);
-  const leakBase = useFunnelStore((s) => s.leakBase);
-  const leakAfter = useFunnelStore(selectLeakCurrent);
-  const closedPct = useFunnelStore(selectLeakClosedPct);
   const reduced = useReducedMotionSafe();
-
-  const leakBefore = Math.round(leakBase * (1 - LEAK_WEIGHTS.m1));
-  const [displayValue, setDisplayValue] = useState(leakBefore);
-
-  useEffect(() => {
-    if (reduced) {
-      setDisplayValue(leakAfter);
-      return;
-    }
-    const timer = window.setTimeout(() => setDisplayValue(leakAfter), 500);
-    return () => window.clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const handleNext = () => {
     haptics.medium();
@@ -105,22 +85,22 @@ export function Bridge2Screen() {
         ))}
       </motion.div>
 
-      <Well>
-        <div className="grid gap-1">
-          <div className="grid grid-cols-[1fr_auto] items-baseline">
-            <span className="t-label text-ink-faint">УТЕЧКА СЕЙЧАС</span>
-            <span className="t-label text-acid">ЗАКРЫТО НА {closedPct}%</span>
+      <Panel label={`ПОСЛЕ ${MODULES.m2.code}`} status="done">
+        <div className="grid gap-3">
+          <div className="grid gap-1">
+            <span className="t-label text-acid">ТЕПЕРЬ УМЕЕШЬ</span>
+            <p className="t-body text-ink">{MODULES.m2.outcome}</p>
           </div>
-          <div style={{ color: 'var(--rust)' }}>
-            <Readout value={displayValue} suffix="₽" />
+          <div className="grid gap-1">
+            <span className="t-label text-ink-faint">ПОКА НЕ УМЕЕШЬ</span>
+            <p className="t-body-s text-ink-muted">
+              Показать это на посадочной странице — сайт клиента к этому пока не готов.
+            </p>
           </div>
-          <span className="t-body-s text-ink-muted">
-            Было {formatRub(leakBefore)} — узел М-02 закрыт, часть утечки ушла.
-          </span>
         </div>
-      </Well>
+      </Panel>
 
-      <BottomBar hint="ОЦЕНКА. НЕ ОБЕЩАНИЕ.">
+      <BottomBar>
         <Button variant="primary" full onClick={handleNext}>
           {copy.cta}
         </Button>

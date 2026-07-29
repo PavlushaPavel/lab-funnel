@@ -5,12 +5,12 @@ import { BottomBar } from '../../ui/BottomBar';
 import { Button } from '../../ui/Button';
 import { CodeInput } from '../../ui/CodeInput';
 import { ScanLine } from '../../ui/ScanLine';
-import { ElementTile } from '../../ui/ElementTile';
-import type { ElementState } from '../../ui/ElementTile';
+import { ModuleBadge } from '../../ui/ModuleBadge';
+import type { ModuleBadgeState } from '../../ui/ModuleBadge';
 import { Quote } from '../../ui/Quote';
 import { Prose } from '../../ui/Prose';
 import { SCREENS } from '../../content/screens';
-import { MODULES, moduleMass } from '../../content/modules';
+import { MODULES } from '../../content/modules';
 import { isVideoPlaceholder } from '../../content/video';
 import { useFunnelStore } from '../../store/funnel';
 import { track } from '../../lib/analytics';
@@ -30,34 +30,36 @@ const CODE_WORD = normalize(copy.codeWord ?? '');
 // иначе воронка непроходима. С появлением реального src подсказка исчезает сама.
 const VIDEO_PENDING = isVideoPlaceholder('m3-video');
 
-/** Подпись под клеткой по фазе синтеза, как на m1-code/m2-code (CodeStepScreen). */
-const TILE_LABEL: Record<ElementState, string> = {
-  locked: 'ЖДЁТ ФОРМУЛЫ',
-  active: 'ИДЁТ СИНТЕЗ…',
-  obtained: 'ПОЛУЧЕНО',
+/** Подпись под карточкой модуля по фазе проверки кода, как на m1-code/m2-code (CodeStepScreen). */
+const TILE_LABEL: Record<ModuleBadgeState, string> = {
+  locked: 'Ждём слово',
+  active: 'Проверяем',
+  done: 'Доступ открыт',
 };
-const TILE_LABEL_CLASS: Record<ElementState, string> = {
+const TILE_LABEL_CLASS: Record<ModuleBadgeState, string> = {
   locked: 'text-ink-faint',
   active: 'text-acid',
-  obtained: 'text-sky',
+  done: 'text-sky',
 };
 
 /**
  * Оркестровка появления сцены разблокировки после верного кода: сначала CodeInput сам
- * доигрывает каскад слотов + скан-линию (lib/motion.ts::durations), затем клетка М-03
- * переходит «активна» → «получена», и только после паузы — подпись-шутка (см. ниже).
+ * доигрывает каскад слотов + скан-линию (lib/motion.ts::durations), затем карточка М-03
+ * переходит «активна» → «доступ открыт», и только после паузы — подпись-шутка (см. ниже).
  * Это не пружина/easing (те уже взяты из lib/motion.ts), а сюжетная пауза конкретного
  * экрана, поэтому живёт локально, а не в общем моторном модуле.
  */
 const REVEAL = {
-  panelDelay: 0.55, // даём CodeInput доиграть каскад + скан-линию, прежде чем клетка «получена»
-  captionDelay: 0.55 + 0.32 + 0.35, // подпись выходит отдельным бит-ом, после самой клетки
+  panelDelay: 0.55, // даём CodeInput доиграть каскад + скан-линию, прежде чем карточка «открыта»
+  captionDelay: 0.55 + 0.32 + 0.35, // подпись выходит отдельным бит-ом, после самой карточки
   errorHold: 2400, // сколько держим текст ошибки на экране (сам CodeInput чистит слоты быстрее)
 } as const;
 
 /**
- * Финальная проверка (`m3-code`) — код ENTER. После успеха клетка М-03 проходит фазами
- * «заперта» → «идёт синтез» → «получена» (--sky), показывается outcome модуля (PRODUCT.md §3.5).
+ * Финальная проверка (`m3-code`) — код ENTER. После успеха карточка М-03 проходит фазами
+ * «заперта» → «проверяем» → «доступ открыт» (--sky), показывается outcome модуля (PRODUCT.md §3.5).
+ * Код открывает ТОЛЬКО доступ к механике BeforeAfter на следующем экране (store::unlockCode) —
+ * модуль засчитывается пройденным (store::completeModule) уже там, после реальной практики.
  * Подпись «Тебе, если что.» — по словам ТЗ, лучшая шутка воронки: чтобы не потерялась в потоке,
  * она выходит отдельным замедленным бит-ом уже ПОСЛЕ основного текста успеха, оформленная
  * как авторская ремарка (компонент Quote), а не как рядовая подпись под полем.
@@ -67,8 +69,8 @@ export function M3CodeScreen() {
   const next = useFunnelStore((s) => s.next);
   const reduced = useReducedMotionSafe();
 
-  const [solved, setSolved] = useState(false); // код принят, идёт синтез
-  const [unlocked, setUnlocked] = useState(false); // клетка «получена»
+  const [solved, setSolved] = useState(false); // код принят, идёт проверка
+  const [unlocked, setUnlocked] = useState(false); // карточка «доступ открыт»
   const [showError, setShowError] = useState(false);
   const scanTriggerRef = useRef(0);
   const [scanTrigger, setScanTrigger] = useState(0);
@@ -106,7 +108,7 @@ export function M3CodeScreen() {
     next();
   };
 
-  const tileState: ElementState = unlocked ? 'obtained' : solved ? 'active' : 'locked';
+  const tileState: ModuleBadgeState = unlocked ? 'done' : solved ? 'active' : 'locked';
 
   return (
     <Screen id="m3-code" phase="believe">
@@ -153,16 +155,9 @@ export function M3CodeScreen() {
           )}
         </AnimatePresence>
 
-        {/* Сцена получения вещества: клетка М-03 проходит заперта → идёт синтез → получена. */}
+        {/* Сцена открытия доступа: карточка М-03 проходит заперта → проверяем → доступ открыт. */}
         <div className="grid justify-items-center gap-3 py-2">
-          <ElementTile
-            number={module3.number}
-            symbol={module3.symbol}
-            name={module3.title}
-            mass={moduleMass(module3.id)}
-            state={tileState}
-            size="lg"
-          />
+          <ModuleBadge code={module3.code} title={module3.title} state={tileState} size="lg" />
           {solved && <span className={`t-label ${TILE_LABEL_CLASS[tileState]}`}>{TILE_LABEL[tileState]}</span>}
         </div>
 

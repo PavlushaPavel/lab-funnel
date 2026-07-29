@@ -6,9 +6,9 @@ import { Button } from '../../ui/Button';
 import { Panel } from '../../ui/Panel';
 import { Quote } from '../../ui/Quote';
 import { VideoBlock } from '../../ui/VideoBlock';
-import { ElementTile } from '../../ui/ElementTile';
+import { ModuleBadge } from '../../ui/ModuleBadge';
 import { VIDEOS } from '../../content/video';
-import { MODULES, moduleMass } from '../../content/modules';
+import { MODULES } from '../../content/modules';
 import { useFunnelStore } from '../../store/funnel';
 import type { ModuleId, Phase, StepId } from '../../store/funnel';
 import { track } from '../../lib/analytics';
@@ -43,8 +43,8 @@ const STAKE_PHRASE: Record<string, string> = {
  * не увидит ключевое слово кода, а модуль работает только через явный просмотр.
  *
  * Экран намеренно пустой (DESIGN.md §2.2): весь смысл ролика проживается в механиках
- * после ввода кода (BriefDecoder/BullshitDetector, FormulaForge), здесь — только обложка,
- * хронометраж, статус, ставка и предупреждение про код. Расшифровки/пересказа нет.
+ * после ввода кода (BullshitDetector у модуля 1), здесь — только обложка, хронометраж,
+ * статус, ставка и предупреждение про код. Расшифровки/пересказа нет.
  */
 export function VideoStepScreen({ stepId, videoId, moduleId, phase }: VideoStepScreenProps) {
   const next = useFunnelStore((s) => s.next);
@@ -90,14 +90,7 @@ export function VideoStepScreen({ stepId, videoId, moduleId, phase }: VideoStepS
     <Screen id={stepId} phase={phase}>
       <div className="grid grid-cols-[1fr_auto] items-start gap-4">
         <h1 className="t-display-l text-ink">{video.title}</h1>
-        <ElementTile
-          number={module.number}
-          symbol={module.symbol}
-          name={module.title}
-          mass={moduleMass(moduleId)}
-          state="locked"
-          size="sm"
-        />
+        <ModuleBadge code={module.code} title={module.title} state="locked" size="sm" />
       </div>
 
       <VideoBlock id={videoId} onProgress={handleProgress} />

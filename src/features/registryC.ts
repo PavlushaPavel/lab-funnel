@@ -19,7 +19,6 @@ type RegistryCStep = Extract<
   | 'm3-video'
   | 'm3-code'
   | 'm3-beforeafter'
-  | 'chain'
   | 'final-video'
   | 'offer'
   | 'autoseller'
@@ -34,9 +33,8 @@ const loaders = {
   'm3-code': () => import('./module3/M3CodeScreen').then((m) => ({ default: m.M3CodeScreen })),
   'm3-beforeafter': () =>
     import('./module3/M3BeforeAfterScreen').then((m) => ({ default: m.M3BeforeAfterScreen })),
-  chain: () => import('./chain/ChainScreen').then((m) => ({ default: m.ChainScreen })),
   'final-video': () =>
-    import('./chain/FinalVideoScreen').then((m) => ({ default: m.FinalVideoScreen })),
+    import('./final/FinalVideoScreen').then((m) => ({ default: m.FinalVideoScreen })),
   offer: () => import('./offer/OfferScreen').then((m) => ({ default: m.OfferScreen })),
   autoseller: () =>
     import('./autoseller/AutoSellerScreen').then((m) => ({ default: m.AutoSellerScreen })),

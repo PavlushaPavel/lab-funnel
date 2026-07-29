@@ -6,9 +6,9 @@ import { Button } from '../../ui/Button';
 import { Prose } from '../../ui/Prose';
 import { VideoBlock } from '../../ui/VideoBlock';
 import { Divider } from '../../ui/Divider';
-import { ElementTile } from '../../ui/ElementTile';
+import { ModuleBadge } from '../../ui/ModuleBadge';
 import { SCREENS } from '../../content/screens';
-import { MODULES, moduleMass } from '../../content/modules';
+import { MODULES } from '../../content/modules';
 import { useFunnelStore } from '../../store/funnel';
 import { track } from '../../lib/analytics';
 import { haptics } from '../../lib/telegram';
@@ -45,9 +45,9 @@ const PROGRESS_CHECKPOINTS = [0.5];
 /**
  * Финальное видео-переход (`final-video`) — мост из фазы ВЕРЮ в фазу ПЛАЧУ. Смысл ролика
  * (PRODUCT.md §4-БИС «путь ты видел, но техническая часть — отдельный кусок») несётся не
- * пересказом, а визуальным контрастом: три ПОЛУЧЕННЫХ элемента (ElementTile 'obtained',
- * --sky — DESIGN.md §2.9) против списка НЕЗАКРЫТЫХ технических пунктов с незакрашенными
- * маркерами --ink-faint. Описание ролика (video.description) нигде не выводится.
+ * пересказом, а визуальным контрастом: три ПРОЙДЕННЫХ модуля (ModuleBadge 'done', --sky)
+ * против списка НЕ ЗАКРЫТЫХ технических пунктов с незакрашенными маркерами --ink-faint.
+ * Описание ролика (video.description) нигде не выводится.
  */
 export function FinalVideoScreen() {
   const setVideoProgress = useFunnelStore((s) => s.setVideoProgress);
@@ -97,18 +97,10 @@ export function FinalVideoScreen() {
 
         <div className="grid gap-4">
           <div className="grid gap-2">
-            <p className="t-label text-ink-faint">ПОЛУЧЕНО</p>
+            <p className="t-label text-ink-faint">ПРОЙДЕНО</p>
             <div className="flex flex-wrap gap-3">
               {MODULE_LIST.map((m) => (
-                <ElementTile
-                  key={m.id}
-                  number={m.number}
-                  symbol={m.symbol}
-                  name={m.title}
-                  mass={moduleMass(m.id)}
-                  state="obtained"
-                  size="sm"
-                />
+                <ModuleBadge key={m.id} code={m.code} title={m.title} state="done" size="sm" />
               ))}
             </div>
           </div>

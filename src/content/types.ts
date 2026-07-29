@@ -76,11 +76,6 @@ export interface ModuleCopy {
   title: string; // «АУДИТОРИЯ» / «ОФФЕРЫ» / «СТРАНИЦА»
   codeWord: string; // БРИФ / ФОРМУЛА / ENTER
   outcome: string; // что человек теперь умеет — 1 фраза
-  chainRole: string; // роль модуля в финальной цепочке (экран chain)
-  /** Атомный номер клетки элемента: «01» / «02» / «03» (DESIGN.md §6.1). */
-  number: string;
-  /** Символ элемента — две кириллические буквы, как в таблице Менделеева. */
-  symbol: string;
 }
 
 /** Один вариант ответа в практике, с флагом «слабого»/ретрай-варианта. */
@@ -96,7 +91,12 @@ export interface PracticeCopy {
   id: string; // StepId практики
   title: string;
   sourceOptions: { id: string; label: string }[]; // «Мой проект / Проект клиента / …» или площадки
-  steps: string[]; // «Что делает пользователь» / «Действия», по порядку
+  /**
+   * Задание на реальный ввод — то, что человек реально сделал у ассистента, не чекбокс
+   * «открыл/передал/получил» (PRODUCT.md §3.4). Не абстракция, конкретное задание из BRIEF.md.
+   */
+  inputPrompt: string;
+  inputPlaceholder: string;
   checkQuestion: string; // контрольный вопрос
   checkOptions: PracticeOption[];
 }

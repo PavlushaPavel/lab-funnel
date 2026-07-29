@@ -9,7 +9,9 @@
  * в брифе отдельных разделов нет — набор собран из тех же формулировок (см. итоговый отчёт).
  * niche и losing — авторские, brief их не даёт (см. итоговый отчёт).
  *
- * SPEC_BASE (базы утечки ₽/мес) уже определены в src/store/funnel.ts — не дублируются здесь.
+ * Денежная «утечка» (SPEC_BASE/LEAK_WEIGHTS) снесена целиком как выдуманная экономика
+ * (см. ARCHITECTURE.md §3) — в store/funnel.ts таких полей больше нет, здесь их тем более
+ * не было и не будет.
  */
 import type { SpecCopy } from './types';
 import type { Spec } from '../store/funnel';

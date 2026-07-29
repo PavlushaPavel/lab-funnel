@@ -16,7 +16,7 @@ const FALLBACK_SHOW_DELAY_S = 0.18;
  * Suspense-фолбэк между экранами воронки (DESIGN.md §3, §6). Каркас — тот же, что у Screen
  * (min-h-dvh, --app-max, --gutter), поэтому раскладка не прыгает при замене на настоящий экран.
  * Появляется с задержкой, а не мгновенно: при удачном префетче (App.tsx) его не видно вовсе.
- * Язык — маркировка узла со статусом «идёт замер» (пульсирующая --rust точка, DESIGN.md §6.2)
+ * Язык — маркировка узла со статусом «загрузка» (пульсирующая --rust точка, DESIGN.md §6.2)
  * и калибровочная шкала — те же фирменные элементы, что и на «бутовом» экране intro.
  */
 export function StepFallback() {
@@ -37,7 +37,7 @@ export function StepFallback() {
           animate={{ opacity: 1, y: 0 }}
           transition={reduced ? { duration: 0.12 } : { duration: 0.2, ease: easeOut }}
         >
-          <NodeLabel code="ЛАБОРАТОРИЯ" title="ИДЁТ ЗАМЕР" status="scanning" />
+          <NodeLabel code="ЛАБОРАТОРИЯ" title="ЗАГРУЗКА" status="scanning" />
           <TickRail progress={0.4} height={16} />
         </motion.div>
       )}
