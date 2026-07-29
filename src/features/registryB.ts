@@ -4,22 +4,13 @@
  *
  * Типизирован точным подмножеством StepId (не Partial<Record<StepId, …>>) — это то, что
  * позволяет router/registry.tsx поймать пропущенный шаг на этапе компиляции, а не в рантайме.
+ *
+ * Экраны грузятся лениво (React.lazy) — см. комментарий в registryA.ts о том, как здесь
+ * сохранена проверка полноты компилятором (через `satisfies` на объекте загрузчиков).
  */
+import { lazy } from 'react';
 import type { ComponentType } from 'react';
 import type { StepId } from '../store/funnel';
-import { M1IntroScreen } from './module1/M1IntroScreen';
-import { M1VideoScreen } from './module1/M1VideoScreen';
-import { M1CodeScreen } from './module1/M1CodeScreen';
-import { M1DecoderScreen } from './module1/M1DecoderScreen';
-import { M1DetectorScreen } from './module1/M1DetectorScreen';
-import { M1PracticeScreen } from './module1/M1PracticeScreen';
-import { Bridge1Screen } from './module1/Bridge1Screen';
-import { M2IntroScreen } from './module2/M2IntroScreen';
-import { M2VideoScreen } from './module2/M2VideoScreen';
-import { M2CodeScreen } from './module2/M2CodeScreen';
-import { M2ForgeScreen } from './module2/M2ForgeScreen';
-import { M2PracticeScreen } from './module2/M2PracticeScreen';
-import { Bridge2Screen } from './module2/Bridge2Screen';
 
 type RegistryBStep = Extract<
   StepId,
@@ -38,18 +29,35 @@ type RegistryBStep = Extract<
   | 'bridge-2'
 >;
 
-export const registryB: Record<RegistryBStep, ComponentType> = {
-  'm1-intro': M1IntroScreen,
-  'm1-video': M1VideoScreen,
-  'm1-code': M1CodeScreen,
-  'm1-decoder': M1DecoderScreen,
-  'm1-detector': M1DetectorScreen,
-  'm1-practice': M1PracticeScreen,
-  'bridge-1': Bridge1Screen,
-  'm2-intro': M2IntroScreen,
-  'm2-video': M2VideoScreen,
-  'm2-code': M2CodeScreen,
-  'm2-forge': M2ForgeScreen,
-  'm2-practice': M2PracticeScreen,
-  'bridge-2': Bridge2Screen,
-};
+type Loader = () => Promise<{ default: ComponentType }>;
+
+const loaders = {
+  'm1-intro': () => import('./module1/M1IntroScreen').then((m) => ({ default: m.M1IntroScreen })),
+  'm1-video': () => import('./module1/M1VideoScreen').then((m) => ({ default: m.M1VideoScreen })),
+  'm1-code': () => import('./module1/M1CodeScreen').then((m) => ({ default: m.M1CodeScreen })),
+  'm1-decoder': () =>
+    import('./module1/M1DecoderScreen').then((m) => ({ default: m.M1DecoderScreen })),
+  'm1-detector': () =>
+    import('./module1/M1DetectorScreen').then((m) => ({ default: m.M1DetectorScreen })),
+  'm1-practice': () =>
+    import('./module1/M1PracticeScreen').then((m) => ({ default: m.M1PracticeScreen })),
+  'bridge-1': () => import('./module1/Bridge1Screen').then((m) => ({ default: m.Bridge1Screen })),
+  'm2-intro': () => import('./module2/M2IntroScreen').then((m) => ({ default: m.M2IntroScreen })),
+  'm2-video': () => import('./module2/M2VideoScreen').then((m) => ({ default: m.M2VideoScreen })),
+  'm2-code': () => import('./module2/M2CodeScreen').then((m) => ({ default: m.M2CodeScreen })),
+  'm2-forge': () => import('./module2/M2ForgeScreen').then((m) => ({ default: m.M2ForgeScreen })),
+  'm2-practice': () =>
+    import('./module2/M2PracticeScreen').then((m) => ({ default: m.M2PracticeScreen })),
+  'bridge-2': () => import('./module2/Bridge2Screen').then((m) => ({ default: m.Bridge2Screen })),
+} satisfies Record<RegistryBStep, Loader>;
+
+/** Компоненты для screenRegistry — обёрнуты в lazy() поверх тех же загрузчиков. */
+export const registryB: Record<RegistryBStep, ComponentType> = Object.fromEntries(
+  (Object.entries(loaders) as [RegistryBStep, Loader][]).map(([step, loader]) => [
+    step,
+    lazy(loader),
+  ])
+) as unknown as Record<RegistryBStep, ComponentType>;
+
+/** Сырые загрузчики — для префетча следующего шага (App.tsx), без монтирования компонента. */
+export const preloadersB: Record<RegistryBStep, Loader> = loaders;

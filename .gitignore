@@ -30,3 +30,6 @@ dist-ssr
 
 # Локальные настройки Claude Code
 .claude/settings.local.json
+
+# Артефакт визуализатора бандла
+stats.html

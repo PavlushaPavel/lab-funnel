@@ -5,31 +5,13 @@
  * а не через семь параллельных сценариев (PRODUCT.md §5). Ниш — три: галстуки, стоматология,
  * натяжные потолки. Тексты по ситуациям, боли, страхам взяты из логики брифа (раздел 6, часть 1 и 4);
  * сами ниши стоматологии и потолков — придуманы этим агентом по аналогии с примером галстуков.
+ *
+ * NicheId/NICHE_OF/NICHE_LABEL живут в content/niches.ts — отдельным маленьким модулем
+ * (нужны за пределами механик, в т.ч. specializations.ts, которому не нужен весь этот файл).
  */
 import type { Spec, ModuleId } from '../store/funnel';
-
-// ---------------------------------------------------------------------------
-// НИШИ — общий словарь подстановки для всех механик модуля 1/2/3.
-// ---------------------------------------------------------------------------
-
-export type NicheId = 'ties' | 'dental' | 'ceilings';
-
-/** Специализация пользователя -> ниша-пример для механик. Не 7 сценариев, а подстановка. */
-export const NICHE_OF: Record<Spec, NicheId> = {
-  direct: 'dental',
-  avito: 'ceilings',
-  target: 'ties',
-  marketing: 'dental',
-  business: 'ceilings',
-  newbie: 'ties',
-  unknown: 'ties',
-};
-
-export const NICHE_LABEL: Record<NicheId, string> = {
-  ties: 'галстуки',
-  dental: 'стоматология',
-  ceilings: 'натяжные потолки',
-};
+import type { NicheId } from './niches';
+import { NICHE_OF, NICHE_LABEL } from './niches';
 
 // ---------------------------------------------------------------------------
 // 1. BriefDecoder — «Расшифруй бриф»
