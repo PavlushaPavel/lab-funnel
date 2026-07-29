@@ -1,0 +1,257 @@
+/* globals.css — reset, типографика, мост токенов в Tailwind v4. */
+
+/* source() ограничивает автосканирование Tailwind папкой src — иначе он подхватывает
+   классоподобные токены из текста ARCHITECTURE.md/DESIGN.md (например «h-screen» из списка запретов). */
+@import 'tailwindcss' source('../');
+@source '../../index.html';
+@import './tokens.css';
+
+/* Шрифты — self-hosted, variable-начертания */
+@import '@fontsource-variable/onest';
+@import '@fontsource-variable/jetbrains-mono';
+
+@theme {
+  /* Цвета — мост к tokens.css. Имена namespaced Tailwind-ом (--color-*),
+     поэтому var()-ссылка на tokens.css не создаёт цикла. */
+  --color-void: var(--bg-void);
+  --color-panel: var(--bg-panel);
+  --color-raised: var(--bg-raised);
+  --color-sunken: var(--bg-sunken);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-line-signal: var(--line-signal);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-ink-invert: var(--ink-invert);
+  --color-signal: var(--signal);
+  --color-signal-deep: var(--signal-deep);
+  --color-signal-dim: var(--signal-dim);
+  --color-signal-glow: var(--signal-glow);
+  --color-warn: var(--warn);
+  --color-warn-dim: var(--warn-dim);
+  --color-bad: var(--bad);
+  --color-bad-dim: var(--bad-dim);
+
+  /* Шрифты и радиусы — имя переменной Tailwind (--font-*, --radius-*) совпадает
+     с именем в tokens.css дословно, поэтому здесь литерал, а не var(),
+     иначе получится циклическая CSS-переменная (--font-sans: var(--font-sans)). */
+  --font-sans: 'Onest Variable', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  /* Доп. токен ширины/отступа контента для утилит Tailwind */
+  --spacing-gutter: 20px;
+  --container-app: 480px;
+}
+
+/* ---- Reset ---- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  color-scheme: dark;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  min-height: 100dvh;
+  background: var(--bg-void);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior-y: none;
+}
+
+#root {
+  min-height: 100dvh;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+}
+
+/* Длинный русский текст не должен ломать раскладку */
+p,
+h1,
+h2,
+h3,
+span,
+div {
+  overflow-wrap: anywhere;
+}
+
+/* ---- Фокус ---- */
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+/* ---- Типографическая шкала (DESIGN.md §4) ---- */
+.t-display-xl {
+  font: 700 2.125rem/1.02 var(--font-sans);
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.t-display-l {
+  font: 700 1.75rem/1.06 var(--font-sans);
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.t-h1 {
+  font: 600 1.375rem/1.18 var(--font-sans);
+  letter-spacing: -0.02em;
+}
+
+.t-h2 {
+  font: 600 1.125rem/1.28 var(--font-sans);
+  letter-spacing: -0.015em;
+}
+
+.t-body {
+  font: 400 1rem/1.55 var(--font-sans);
+  letter-spacing: -0.005em;
+  max-width: 42ch;
+}
+
+.t-body-s {
+  font: 400 0.875rem/1.5 var(--font-sans);
+  letter-spacing: 0;
+}
+
+.t-label {
+  font: 500 0.6875rem/1.2 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.t-readout {
+  font: 600 2.5rem/1 var(--font-mono);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.t-readout-s {
+  font: 500 0.9375rem/1.3 var(--font-mono);
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Любые моно-числа — фиксированная ширина цифр, не прыгают при анимации */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Фирменные элементы (DESIGN.md §6) ---- */
+
+/* Калибровочная шкала: риски 1px, шаг 6px, каждая 5-я (30px) — на всю высоту. */
+.tick-rail-fill {
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(90deg, var(--tick-color) 0 1px, transparent 1px 6px),
+    repeating-linear-gradient(90deg, var(--tick-color) 0 1px, transparent 1px 30px);
+  background-size:
+    100% 50%,
+    100% 100%;
+  background-position:
+    bottom,
+    bottom;
+  background-repeat: repeat-x, repeat-x;
+}
+
+/* Shake: неверный ответ / неверный код (±4px, 220ms). */
+@keyframes lab-shake {
+  10%,
+  90% {
+    transform: translateX(-1px);
+  }
+  20%,
+  80% {
+    transform: translateX(2px);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translateX(-4px);
+  }
+  40%,
+  60% {
+    transform: translateX(4px);
+  }
+}
+
+.anim-shake {
+  animation: lab-shake 220ms;
+}
+
+/* Пульс статуса «идёт замер» — единственная разрешённая бесконечная анимация помимо курсора. */
+@keyframes lab-pulse-warn {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.anim-pulse-warn {
+  animation: lab-pulse-warn 1.2s ease-in-out infinite;
+}
+
+/* Курсор в поле кода — вторая разрешённая бесконечная анимация. */
+@keyframes lab-cursor-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.anim-cursor-blink {
+  animation: lab-cursor-blink 1s steps(1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-shake {
+    animation: none;
+  }
+}
+
+/* ---- Reduced motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,63 @@
+/* tokens.css — единственный источник CSS-переменных проекта.
+   Дословно из DESIGN.md §3 (цвет), §4 (типографика), §5 (пространство/сетка).
+   Никаких хардкодных цветов/размеров вне этого файла. */
+
+:root {
+  /* ---- §3 ЦВЕТ ---- */
+  /* Поверхности — снизу вверх по высоте */
+  --bg-void: #08090b;
+  --bg-panel: #0e1013;
+  --bg-raised: #16191d;
+  --bg-sunken: #050607;
+
+  /* Линии — волосяные, всегда 1px */
+  --line: rgba(255, 255, 255, 0.075);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --line-signal: rgba(198, 242, 78, 0.32);
+
+  /* Текст */
+  --ink: #edeff2;
+  --ink-muted: #9aa2ab;
+  --ink-faint: #5c646d;
+  --ink-invert: #08090b;
+
+  /* СИГНАЛ — единственный акцент */
+  --signal: #c6f24e;
+  --signal-deep: #a8d42f;
+  --signal-dim: rgba(198, 242, 78, 0.12);
+  --signal-glow: rgba(198, 242, 78, 0.2);
+
+  /* Семантика — НЕ для украшения */
+  --warn: #ffa53d;
+  --warn-dim: rgba(255, 165, 61, 0.12);
+  --bad: #ff5a45;
+  --bad-dim: rgba(255, 90, 69, 0.12);
+
+  /* ---- §4 ТИПОГРАФИКА ---- */
+  --font-sans: 'Onest Variable', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+
+  /* ---- §5 ПРОСТРАНСТВО И СЕТКА ---- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  --gutter: 20px;
+  --app-max: 480px;
+  --bar-h: 76px;
+
+  /* Структурные тени фирменных элементов (не часть цветовой палитры §3,
+     но литералы заданы дословно в DESIGN.md §6.3/§6.4) — вынесены сюда,
+     чтобы нигде в компонентах не было хардкодных rgba(). */
+  --shadow-well-inset: inset 0 1px 0 rgba(0, 0, 0, 0.6);
+  --shadow-panel-sheen: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
