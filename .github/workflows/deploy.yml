@@ -34,7 +34,12 @@ jobs:
         run: npm run typecheck
 
       - name: Build
-        run: npm run build
+        # base задаётся здесь, а не в vite.config.ts: путь публикации — свойство
+        # деплоя, а не исходников. Абсолютный base обязателен, потому что SPA-фолбэк
+        # отдаёт index.html на любой путь: при относительном './' адрес со слэшем
+        # на конце (/lab-funnel/prefreim/) разрешал бы ассеты в несуществующий
+        # /lab-funnel/prefreim/assets/ и давал белый экран.
+        run: npm run build -- --base=/${{ github.event.repository.name }}/
         env:
           # Переменные сборки. Пустые значения безопасны: приложение показывает
           # честные заглушки вместо падения (см. ARCHITECTURE.md §10).
