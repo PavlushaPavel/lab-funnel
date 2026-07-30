@@ -4,7 +4,6 @@ import { Screen } from '../../ui/Screen';
 import { BottomBar } from '../../ui/BottomBar';
 import { Button } from '../../ui/Button';
 import { CodeInput } from '../../ui/CodeInput';
-import { ScanLine } from '../../ui/ScanLine';
 import { ModuleBadge } from '../../ui/ModuleBadge';
 import type { ModuleBadgeState } from '../../ui/ModuleBadge';
 import { Quote } from '../../ui/Quote';
@@ -37,27 +36,27 @@ const TILE_LABEL: Record<ModuleBadgeState, string> = {
   done: 'Доступ открыт',
 };
 const TILE_LABEL_CLASS: Record<ModuleBadgeState, string> = {
-  locked: 'text-ink-faint',
-  active: 'text-acid',
-  done: 'text-sky',
+  locked: 'text-ink-muted',
+  active: 'text-ink-secondary',
+  done: 'text-ink',
 };
 
 /**
  * Оркестровка появления сцены разблокировки после верного кода: сначала CodeInput сам
- * доигрывает каскад слотов + скан-линию (lib/motion.ts::durations), затем карточка М-03
+ * доигрывает каскадную заливку слотов (lib/motion.ts::durations), затем карточка М-03
  * переходит «активна» → «доступ открыт», и только после паузы — подпись-шутка (см. ниже).
  * Это не пружина/easing (те уже взяты из lib/motion.ts), а сюжетная пауза конкретного
  * экрана, поэтому живёт локально, а не в общем моторном модуле.
  */
 const REVEAL = {
-  panelDelay: 0.55, // даём CodeInput доиграть каскад + скан-линию, прежде чем карточка «открыта»
+  panelDelay: 0.55, // даём CodeInput доиграть каскад заливки, прежде чем карточка «открыта»
   captionDelay: 0.55 + 0.32 + 0.35, // подпись выходит отдельным бит-ом, после самой карточки
   errorHold: 2400, // сколько держим текст ошибки на экране (сам CodeInput чистит слоты быстрее)
 } as const;
 
 /**
  * Финальная проверка (`m3-code`) — код ENTER. После успеха карточка М-03 проходит фазами
- * «заперта» → «проверяем» → «доступ открыт» (--sky), показывается outcome модуля (PRODUCT.md §3.5).
+ * «заперта» → «проверяем» → «доступ открыт» (--mint), показывается outcome модуля (PRODUCT.md §3.5).
  * Код открывает ТОЛЬКО доступ к механике BeforeAfter на следующем экране (store::unlockCode) —
  * модуль засчитывается пройденным (store::completeModule) уже там, после реальной практики.
  * Подпись «Тебе, если что.» — по словам ТЗ, лучшая шутка воронки: чтобы не потерялась в потоке,
@@ -72,8 +71,6 @@ export function M3CodeScreen() {
   const [solved, setSolved] = useState(false); // код принят, идёт проверка
   const [unlocked, setUnlocked] = useState(false); // карточка «доступ открыт»
   const [showError, setShowError] = useState(false);
-  const scanTriggerRef = useRef(0);
-  const [scanTrigger, setScanTrigger] = useState(0);
   const errorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(
@@ -91,8 +88,6 @@ export function M3CodeScreen() {
       unlockCode('m3');
       setShowError(false);
       setSolved(true);
-      scanTriggerRef.current += 1;
-      setScanTrigger(scanTriggerRef.current);
       window.setTimeout(() => setUnlocked(true), REVEAL.panelDelay * 1000);
       return true;
     }
@@ -114,7 +109,7 @@ export function M3CodeScreen() {
     <Screen id="m3-code" phase="believe">
       <div className="grid gap-6 pt-2">
         <div className="grid gap-3">
-          <h1 className="t-display-l text-ink">{copy.title}</h1>
+          <h1 className="t-display text-ink">{copy.title}</h1>
           <Prose>
             {copy.body?.map((p, i) => (
               <p key={i}>{p}</p>
@@ -122,15 +117,15 @@ export function M3CodeScreen() {
           </Prose>
         </div>
 
-        <div className="relative">
-          <CodeInput length={CODE_WORD.length} onSubmit={handleSubmit} />
-          <ScanLine trigger={scanTrigger > 0} />
-        </div>
+        <CodeInput length={CODE_WORD.length} onSubmit={handleSubmit} />
 
         {VIDEO_PENDING && (
-          <p className="t-body-s text-ink-muted">
+          <p className="t-body-sm text-ink-secondary">
             Видео пока не подключено, взять слово неоткуда — на время сборки оно такое:{' '}
-            <span className="t-readout-s text-acid">{CODE_WORD}</span>
+            {/* Подсветка слова — единственное назначение --voltage (DESIGN.md §3). */}
+            <span className="bg-voltage rounded-button px-1.5 font-mono text-ink tabular-nums">
+              {CODE_WORD}
+            </span>
           </p>
         )}
 
@@ -143,12 +138,12 @@ export function M3CodeScreen() {
               transition={{ duration: reduced ? 0.12 : 0.24, ease: easeOut }}
               className="grid gap-1"
             >
-              <p className="t-h2" style={{ color: 'var(--bad)' }}>
-                {copy.errorTitle}
-              </p>
+              <p className="t-subheading text-alert">{copy.errorTitle}</p>
               <Prose>
                 {copy.errorBody?.map((p, i) => (
-                  <p key={i}>{p}</p>
+                  <p key={i} className="text-ink-secondary">
+                    {p}
+                  </p>
                 ))}
               </Prose>
             </motion.div>
@@ -158,23 +153,23 @@ export function M3CodeScreen() {
         {/* Сцена открытия доступа: карточка М-03 проходит заперта → проверяем → доступ открыт. */}
         <div className="grid justify-items-center gap-3 py-2">
           <ModuleBadge code={module3.code} title={module3.title} state={tileState} size="lg" />
-          {solved && <span className={`t-label ${TILE_LABEL_CLASS[tileState]}`}>{TILE_LABEL[tileState]}</span>}
+          {solved && <span className={`t-caption ${TILE_LABEL_CLASS[tileState]}`}>{TILE_LABEL[tileState]}</span>}
         </div>
 
         <AnimatePresence>
           {unlocked && (
             <motion.div
               className="grid gap-4"
-              initial={reduced ? { opacity: 0 } : { opacity: 0, y: 10 }}
+              initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: reduced ? 0.12 : 0.32, ease: easeOut }}
             >
-              <p className="t-h1 text-ink">{copy.successTitle}</p>
-              <p className="t-body-s text-ink-muted">{module3.outcome}</p>
+              <p className="t-heading-lg text-ink">{copy.successTitle}</p>
+              <p className="t-body text-ink-secondary">{module3.outcome}</p>
 
               {copy.caption && (
                 <motion.div
-                  initial={reduced ? { opacity: 0 } : { opacity: 0, y: 6 }}
+                  initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{
                     duration: reduced ? 0.12 : 0.3,

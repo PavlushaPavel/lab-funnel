@@ -76,9 +76,9 @@ export const haptics: Haptics = {
 
 /**
  * Инициализация Mini App: раскрыть, сообщить о готовности, зафиксировать фирменные цвета.
+ * Тема принудительно светлая, тема клиента игнорируется намеренно (DESIGN.md §8).
  * Telegram WebApp принимает только конкретный hex, а не CSS-переменную — цвет читается
- * прямо из --bg-void (tokens.css), чтобы не заводить второй хардкод того же значения
- * (DESIGN.md §11.2: единственный источник цвета — tokens.css).
+ * прямо из --canvas (tokens.css), чтобы не заводить второй хардкод того же значения.
  */
 export function initTelegram(): void {
   try {
@@ -87,10 +87,10 @@ export function initTelegram(): void {
     wa.ready();
     wa.expand();
     wa.disableVerticalSwipes?.();
-    const bgVoid = getComputedStyle(document.documentElement).getPropertyValue('--bg-void').trim();
-    if (bgVoid) {
-      wa.setHeaderColor(bgVoid);
-      wa.setBackgroundColor(bgVoid);
+    const canvas = getComputedStyle(document.documentElement).getPropertyValue('--canvas').trim();
+    if (canvas) {
+      wa.setHeaderColor(canvas);
+      wa.setBackgroundColor(canvas);
     }
   } catch {
     // no-op вне Telegram

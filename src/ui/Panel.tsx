@@ -10,26 +10,29 @@ interface PanelProps {
   className?: string;
 }
 
+/**
+ * Белая карточка — основная контентная поверхность (DESIGN.md v3 §6).
+ * Без тени и без рамки: от холста --canvas её отделяет только контраст поверхности (§2.1, §2.8).
+ * Статус-точка нейтральна: чёрная — текущее, мята — сделано, --hairline — заперто.
+ * Зацикленной пульсации у «scanning» больше нет (§7: бесконечных анимаций в системе нет).
+ */
 const DOT_CLASS: Record<PanelStatus, string> = {
-  locked: 'bg-ink-faint',
-  active: 'bg-acid',
-  // done — «этап завершён», не «доступ открыт» (тот — только у ModuleBadge/§6.1),
-  // поэтому кислота, а не небо: --sky зарезервирован строго под правило DESIGN.md §2.9.
-  done: 'bg-acid',
-  scanning: 'bg-rust anim-pulse-warn',
+  locked: 'bg-hairline',
+  active: 'bg-ink',
+  done: 'bg-mint',
+  scanning: 'bg-ink-muted',
 };
 
-/** Панель — базовая поверхность интерфейса. Глубина через верхний блик, не через тень (DESIGN.md §7). */
 export function Panel({ label, status = 'active', children, className }: PanelProps) {
   return (
-    <div
-      className={cn('rounded-lg border border-line bg-panel p-4', className)}
-      style={{ boxShadow: 'var(--shadow-panel-sheen)' }}
-    >
+    <div className={cn('rounded-card bg-card p-(--card-pad)', className)}>
       {label && (
         <div className="mb-3 inline-flex items-center gap-2">
-          <span className={cn('h-1 w-1 shrink-0 rounded-full', DOT_CLASS[status])} aria-hidden="true" />
-          <span className="t-label">{label}</span>
+          <span
+            className={cn('h-1.5 w-1.5 shrink-0 rounded-pill', DOT_CLASS[status])}
+            aria-hidden="true"
+          />
+          <span className="t-caption">{label}</span>
         </div>
       )}
       {children}

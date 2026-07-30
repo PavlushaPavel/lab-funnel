@@ -17,21 +17,19 @@ interface ModuleBadgeProps {
 }
 
 /**
- * Карточка статуса модуля — замена `ElementTile` (аудит продукта: клетка периодической
- * таблицы с «атомной массой» и символом элемента протаскивала химическую вселенную в
- * продуктовую логику, выдавая выдуманные числа за реальные данные). Показывает только код,
- * название и статус доступа. Тёмный приборный стиль (границы, --acid/--sky) сохранён —
- * снят только химический смысловой слой.
+ * Статус модуля (DESIGN.md v3 §6): моно-код + название + состояние доступа.
+ * Плоские поверхности без рамок: заперто — --mist, текущее — белая карточка,
+ * открыто — --mint (§3: мята и есть статус «сделано»). Приборных формулировок нет.
  */
-const STATE_CLASS: Record<ModuleBadgeState, { border: string; bg: string; text: string }> = {
-  locked: { border: 'border-line', bg: 'bg-panel', text: 'text-ink-faint' },
-  active: { border: 'border-line-acid', bg: 'bg-panel', text: 'text-acid' },
-  done: { border: 'border-sky', bg: 'bg-sky-dim', text: 'text-sky' },
+const STATE_CLASS: Record<ModuleBadgeState, { bg: string; code: string }> = {
+  locked: { bg: 'bg-mist', code: 'text-ink-muted' },
+  active: { bg: 'bg-card', code: 'text-ink' },
+  done: { bg: 'bg-mint', code: 'text-ink' },
 };
 
 const STATE_LABEL: Record<ModuleBadgeState, string> = {
-  locked: 'заперт',
-  active: 'проверяется',
+  locked: 'закрыт',
+  active: 'текущий',
   done: 'открыт',
 };
 
@@ -47,9 +45,8 @@ export function ModuleBadge({ code, title, state, size = 'lg', className }: Modu
       animate={reduced ? undefined : { scale: [1, 1.03, 1] }}
       transition={springPanel}
       className={cn(
-        'inline-flex items-center gap-3 rounded-md border',
+        'inline-flex items-center gap-3 rounded-card',
         isLg ? 'px-4 py-3' : 'px-3 py-2',
-        c.border,
         c.bg,
         className
       )}
@@ -57,17 +54,21 @@ export function ModuleBadge({ code, title, state, size = 'lg', className }: Modu
       aria-label={`Модуль ${code}, ${title}, ${STATE_LABEL[state]}`}
     >
       {state === 'locked' && (
-        <Lock weight="regular" size={iconSize} className={c.text} aria-hidden="true" />
+        <Lock weight="regular" size={iconSize} color="var(--ink-muted)" aria-hidden="true" />
       )}
       {state === 'active' && (
-        <span className={cn('shrink-0 rounded-full bg-acid', isLg ? 'h-2 w-2' : 'h-1.5 w-1.5')} aria-hidden="true" />
+        <span
+          className={cn('shrink-0 rounded-pill bg-ink', isLg ? 'h-2 w-2' : 'h-1.5 w-1.5')}
+          aria-hidden="true"
+        />
       )}
       {state === 'done' && (
-        <CheckCircle weight="regular" size={iconSize} className={c.text} aria-hidden="true" />
+        <CheckCircle weight="regular" size={iconSize} color="var(--ink)" aria-hidden="true" />
       )}
-      <div className="grid gap-0.5" aria-hidden="true">
-        <span className={cn('t-label leading-none', c.text)}>{code}</span>
-        <span className={cn(isLg ? 't-h2' : 't-body-s', 'leading-tight text-ink')}>{title}</span>
+      <div className="grid gap-1" aria-hidden="true">
+        <span className={cn('t-caption', c.code)}>{code}</span>
+        {/* Onest 500 uppercase: сжатый дисплей мельче 28px не применяется (§2.7) */}
+        <span className={cn(isLg ? 't-heading' : 't-body-sm', 'uppercase text-ink')}>{title}</span>
       </div>
     </motion.div>
   );

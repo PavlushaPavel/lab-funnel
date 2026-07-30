@@ -4,8 +4,6 @@ import { Screen } from '../../ui/Screen';
 import { BottomBar } from '../../ui/BottomBar';
 import { Button } from '../../ui/Button';
 import { Panel } from '../../ui/Panel';
-import { Well } from '../../ui/Well';
-import { Readout } from '../../ui/Readout';
 import { Prose } from '../../ui/Prose';
 import { SCREENS } from '../../content/screens';
 import { getReminder } from '../../content/reminders';
@@ -13,6 +11,7 @@ import { useFunnelStore } from '../../store/funnel';
 import { track } from '../../lib/analytics';
 import { haptics, openLink } from '../../lib/telegram';
 import { easeOut, useReducedMotionSafe } from '../../lib/motion';
+import { formatRub } from '../../lib/format';
 
 const copy = SCREENS.checkout;
 
@@ -69,7 +68,7 @@ export function CheckoutScreen() {
     <Screen id="checkout" phase="pay">
       <div className="grid gap-6 pt-2">
         <div className="grid gap-3">
-          <h1 className="t-display-l text-ink">{copy.title}</h1>
+          <h1 className="t-display text-ink">{copy.title}</h1>
           <Prose>
             {copy.body?.map((p, i) => (
               <p key={i}>{p}</p>
@@ -77,9 +76,12 @@ export function CheckoutScreen() {
           </Prose>
         </div>
 
-        <Well>
-          <Readout value={copy.price ?? 0} suffix="₽" size="lg" />
-        </Well>
+        {/* Цена — белая карточка, а не второй инверсный блок: чёрным залит только блок цены
+            на продающем экране, здесь приём не повторяется (DESIGN.md §6). */}
+        <div className="bg-card rounded-card-lg grid gap-2 p-(--card-pad)">
+          <p className="t-caption">К ОПЛАТЕ</p>
+          <p className="t-display text-ink tabular-nums">{formatRub(copy.price ?? 0)}</p>
+        </div>
 
         <AnimatePresence>
           {showTodo && (
@@ -90,7 +92,7 @@ export function CheckoutScreen() {
               transition={{ duration: reduced ? 0.12 : 0.24, ease: easeOut }}
             >
               <Panel label="TODO">
-                <p className="t-body-s text-ink-muted">Платёжная ссылка ещё не подключена.</p>
+                <p className="t-body-sm text-ink-secondary">Платёжная ссылка ещё не подключена.</p>
               </Panel>
             </motion.div>
           )}
@@ -104,10 +106,12 @@ export function CheckoutScreen() {
               exit={{ opacity: 0 }}
               transition={{ duration: reduced ? 0.12 : 0.24, ease: easeOut }}
             >
-              <Panel label="ВОЗВРАТ БЕЗ ОПЛАТЫ" status="scanning">
+              {/* status='active', не 'scanning': пульсирующая точка — зацикленная анимация,
+                  в v3 их всего две и обе заняты (DESIGN.md §7). */}
+              <Panel label="ВОЗВРАТ БЕЗ ОПЛАТЫ" status="active">
                 <div className="grid gap-3">
                   {RETURN_NOTICE?.body.map((p, i) => (
-                    <p key={i} className="t-body-s text-ink">
+                    <p key={i} className="t-body-sm text-ink">
                       {p}
                     </p>
                   ))}

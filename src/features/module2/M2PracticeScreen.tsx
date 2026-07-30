@@ -102,10 +102,10 @@ export function M2PracticeScreen() {
   return (
     <Screen id="m2-practice" phase="want">
       <NodeLabel code={MODULE.code} title={MODULE.title} status="active" />
-      <h1 className="t-display-l text-ink">{copy.title}</h1>
+      <h1 className="t-display text-ink">{copy.title}</h1>
 
       <div className="grid gap-3">
-        <span className="t-label text-ink-faint">ПЛОЩАДКА</span>
+        <span className="t-caption">ПЛОЩАДКА</span>
         <ChoiceList
           options={platforms}
           value={platformId}
@@ -127,7 +127,7 @@ export function M2PracticeScreen() {
           Открыть ассистента
         </Button>
         {!ASSISTANT_URL && (
-          <p className="t-body-s text-ink-muted">Ссылка на ассистента ещё не подключена.</p>
+          <p className="t-body-sm text-ink-secondary">Ссылка на ассистента ещё не подключена.</p>
         )}
       </div>
 
@@ -142,7 +142,7 @@ export function M2PracticeScreen() {
       </div>
 
       <div className="grid gap-3">
-        <span className="t-label text-ink-faint">КАКОЙ СТРАХ ИЛИ МОТИВ ОН ИСПОЛЬЗУЕТ</span>
+        <span className="t-caption">КАКОЙ СТРАХ ИЛИ МОТИВ ОН ИСПОЛЬЗУЕТ</span>
         <div className="grid gap-2">
           {fearMotiveOptions.map((option, i) => (
             <Choice
@@ -164,7 +164,7 @@ export function M2PracticeScreen() {
         {readyForCheck && (
           <motion.div
             className="grid gap-3"
-            initial={reduced ? { opacity: 0 } : { opacity: 0, y: 10 }}
+            initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: reduced ? 0.12 : 0.26, ease: easeOut }}
@@ -182,7 +182,7 @@ export function M2PracticeScreen() {
                 </Choice>
               ))}
             </div>
-            {shakeId && weakOption && <p className="t-body-s text-bad">{weakOption.reaction}</p>}
+            {shakeId && weakOption && <p className="t-body-sm text-alert">{weakOption.reaction}</p>}
           </motion.div>
         )}
       </AnimatePresence>

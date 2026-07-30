@@ -1,7 +1,6 @@
 import { Screen } from '../../ui/Screen';
 import { BottomBar } from '../../ui/BottomBar';
 import { Button } from '../../ui/Button';
-import { Prose } from '../../ui/Prose';
 import { SCREENS } from '../../content/screens';
 import { useFunnelStore } from '../../store/funnel';
 import { track } from '../../lib/analytics';
@@ -21,12 +20,14 @@ export function DiagIntroScreen() {
 
   return (
     <Screen id="diag-intro" phase="know">
-      <h1 className="t-display-l text-ink">{copy.title}</h1>
-      <Prose>
+      <h1 className="t-display text-ink">{copy.title}</h1>
+      <div className="grid gap-3">
         {copy.body?.map((p, i) => (
-          <p key={i}>{p}</p>
+          <p key={i} className="t-body text-ink-secondary">
+            {p}
+          </p>
         ))}
-      </Prose>
+      </div>
 
       <BottomBar>
         <Button variant="primary" full onClick={handleStart}>

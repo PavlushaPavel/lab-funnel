@@ -2,7 +2,6 @@ import { useRef } from 'react';
 import { Screen } from '../../ui/Screen';
 import { BottomBar } from '../../ui/BottomBar';
 import { Button } from '../../ui/Button';
-import { Prose } from '../../ui/Prose';
 import { VideoBlock } from '../../ui/VideoBlock';
 import { SCREENS } from '../../content/screens';
 import { useFunnelStore } from '../../store/funnel';
@@ -20,7 +19,8 @@ const VIDEO_ID = 'contract';
  * кнопка «Не верю. Продолжай». Раньше здесь была расписка из 4 тапаемых чекбоксов
  * («не верь на слово» / «проверяй» / «докапывайся» / «сопротивляйся») — бюрократический
  * ритуал вместо харизмы автора, снесён (аудит продукта). Самый спокойный экран приложения:
- * максимум воздуха, минимум декора, кислотный цвет — только на кнопке (DESIGN.md §1, §3).
+ * максимум воздуха, минимум декора, единственный контрастный элемент — чёрная первичная
+ * кнопка (DESIGN.md §3).
  */
 export function ContractScreen() {
   const setVideoProgress = useFunnelStore((s) => s.setVideoProgress);
@@ -47,14 +47,17 @@ export function ContractScreen() {
 
   return (
     <Screen id="contract" phase="want">
-      <div className="grid gap-8 pt-2">
-        <div className="grid gap-3">
-          <h1 className="t-display-l text-ink">{copy.title}</h1>
-          <Prose>
+      {/* Воздух вместо декора: вертикальный ритм --section-gap, ни рамок, ни подложек. */}
+      <div className="grid pt-2" style={{ rowGap: 'var(--section-gap)' }}>
+        <div className="grid gap-4">
+          <h1 className="t-display text-ink">{copy.title}</h1>
+          <div className="grid gap-3">
             {copy.body?.map((p, i) => (
-              <p key={i}>{p}</p>
+              <p key={i} className="t-body text-ink-secondary">
+                {p}
+              </p>
             ))}
-          </Prose>
+          </div>
         </div>
 
         <VideoBlock id={VIDEO_ID} onProgress={handleProgress} />

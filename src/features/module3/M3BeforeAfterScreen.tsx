@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Screen } from '../../ui/Screen';
 import { BottomBar } from '../../ui/BottomBar';
 import { Button } from '../../ui/Button';
-import { Panel } from '../../ui/Panel';
 import { NodeLabel } from '../../ui/NodeLabel';
 import { Bullets } from '../../ui/Bullets';
 import { Quote } from '../../ui/Quote';
@@ -98,15 +97,15 @@ export function M3BeforeAfterScreen() {
       <div className="grid gap-6 pt-2">
         <NodeLabel code={module3.code} title={module3.title} status="active" />
 
-        <Panel status={done ? 'done' : 'active'}>
-          <BeforeAfter data={data} spec={spec} onComplete={handleComplete} />
-        </Panel>
+        {/* Механика сама несёт свои поверхности (белая карточка / мятная отметка), поэтому
+            обёртки-панели вокруг неё нет: карточка в карточке в плоском мире читается как шум. */}
+        <BeforeAfter data={data} spec={spec} onComplete={handleComplete} />
 
         <AnimatePresence>
           {done && (
             <motion.div
               className="grid gap-3"
-              initial={reduced ? { opacity: 0 } : { opacity: 0, y: 10 }}
+              initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: reduced ? 0.12 : 0.3, ease: easeOut }}
             >
@@ -125,7 +124,7 @@ export function M3BeforeAfterScreen() {
                   </Choice>
                 ))}
               </div>
-              <p className="t-body-s text-ink-muted">
+              <p className="t-caption tabular-nums">
                 Выбрано {picked.length} из {PICK_TARGET}
               </p>
             </motion.div>
@@ -135,7 +134,7 @@ export function M3BeforeAfterScreen() {
         <AnimatePresence>
           {pickedEnough && (
             <motion.div
-              initial={reduced ? { opacity: 0 } : { opacity: 0, y: 10 }}
+              initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: reduced ? 0.12 : 0.3, ease: easeOut }}
             >
@@ -148,12 +147,12 @@ export function M3BeforeAfterScreen() {
           {traced && (
             <motion.div
               className="grid gap-4"
-              initial={reduced ? { opacity: 0 } : { opacity: 0, y: 10 }}
+              initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: reduced ? 0.12 : 0.3, ease: easeOut }}
             >
               <div className="grid gap-3">
-                <h1 className="t-display-l text-ink">{copy.title}</h1>
+                <h1 className="t-display text-ink">{copy.title}</h1>
                 <Prose>
                   {copy.body?.map((p, i) => (
                     <p key={i}>{p}</p>

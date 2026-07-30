@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import type { CSSProperties } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CaretRight } from '@phosphor-icons/react';
+import { CaretDown, Check, Question } from '@phosphor-icons/react';
 import type { Spec } from '../store/funnel';
 import type { LeakScannerData, LeakSegmentId } from '../content/mechanics';
 import { cn } from '../lib/cn';
@@ -16,20 +15,16 @@ interface LeakScannerProps {
 }
 
 /**
- * Штриховка "тёмного" (неконтролируемого) сегмента — только var()-токены, без хардкода цвета.
- * Раньше вся плашка гасилась общим opacity:0.5, из-за чего "тёмный" сегмент читался как
- * выключенный элемент, а не как "не знаю, что там". Теперь непрозрачность плашки не трогаем —
- * вместо этого рисуем предупреждающую штриховку цветом --rust (хазмат-лента, DESIGN.md §1
- * референс "химзащита"), которая читается как явная зона внимания, а не выключенная кнопка.
- */
-const HATCH_STYLE: CSSProperties = {
-  backgroundImage: 'repeating-linear-gradient(45deg, var(--rust) 0 2px, transparent 2px 9px)',
-};
-
-/**
- * «Где ты слепой» (PRODUCT.md §4.3). Скан-линия проходит по 4 сегментам воронки слева направо,
- * каждый сегмент "загорается" (контролируемый) или остаётся тёмным со штриховкой. Одноразовая
- * анимация на монтаже; onComplete по её завершении.
+ * «Где ты слепой» (PRODUCT.md §4.3). Четыре сегмента воронки проявляются один за другим
+ * по порядку; контролируемые читаются как «сделано», неконтролируемые — как зона
+ * неизвестности. Одноразовое появление на монтаже; onComplete по его завершении.
+ *
+ * Мир v3 (DESIGN.md §3): скан-линии из тёмного мира больше нет — светлый редакционный мир
+ * не «сканирует». Неконтролируемый сегмент не гасится прозрачностью и не размечается
+ * хазмат-штриховкой: он получает тихую подложку --mist, рамку --hairline и подпись
+ * --ink-secondary, то есть читается как «не знаю, что там», а не как выключенная кнопка.
+ * Воронка развёрнута сверху вниз: моно-подписи сегментов набираются в полную ширину,
+ * а не ломаются посреди слова в четырёх узких колонках.
  */
 export function LeakScanner({ data, onComplete }: LeakScannerProps) {
   const { segments, controlledIds } = data;
@@ -66,87 +61,65 @@ export function LeakScanner({ data, onComplete }: LeakScannerProps) {
   };
 
   return (
-    <div className="grid gap-4">
-      <div
-        className="relative grid items-stretch gap-2 overflow-hidden"
-        style={{ gridTemplateColumns: segments.map((_, i) => (i < segments.length - 1 ? '1fr auto' : '1fr')).join(' ') }}
-      >
-        {!reduced && phase === 'scanning' && (
-          <motion.div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 z-10 w-px bg-acid"
-            style={{ boxShadow: '0 0 8px var(--acid-dim)' }}
-            initial={{ left: '0%', opacity: 1 }}
-            animate={{ left: '100%', opacity: [1, 1, 0] }}
-            transition={{ duration: mechanicsDurations.leakScanTotal, ease: easeOut, times: [0, 0.85, 1] }}
-          />
-        )}
-
+    <div className="grid gap-(--sp-3)">
+      <div className="grid gap-1">
         {segments.map((segment, i) => {
           const isControlled = controlledSet.has(segment.id);
           const delay = reduced ? 0 : (i / segments.length) * mechanicsDurations.leakScanTotal;
-          const isLast = i === segments.length - 1;
+          const isOpen = Boolean(expanded[segment.id]);
           return (
-            <div key={segment.id} className="contents">
+            <motion.div
+              key={segment.id}
+              className="grid gap-1"
+              initial={reduced ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: reduced ? 0.12 : 0.3, ease: easeOut, delay }}
+            >
+              {i > 0 && (
+                <div className="grid justify-items-center py-0.5" aria-hidden="true">
+                  <CaretDown weight="regular" size={12} color="var(--ink-muted)" />
+                </div>
+              )}
               <button
                 type="button"
                 onClick={() => toggle(segment.id)}
                 disabled={phase !== 'done'}
-                className="grid gap-2 rounded-md border border-line bg-panel p-3 text-left"
-                aria-expanded={Boolean(expanded[segment.id])}
+                aria-expanded={isOpen}
+                className={cn(
+                  'grid min-h-11 w-full grid-cols-[20px_1fr] items-center gap-3 rounded-card px-4 py-3 text-left',
+                  isControlled ? 'bg-mint' : 'bg-mist'
+                )}
+                style={isControlled ? undefined : { border: '1px solid var(--hairline)' }}
               >
-                <motion.div
-                  className="h-12 rounded-sm"
-                  initial={reduced ? false : { opacity: 0.3 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: reduced ? 0.12 : 0.3, ease: easeOut, delay }}
-                  style={
-                    isControlled
-                      ? { background: 'var(--acid-dim)', border: '1px solid var(--line-acid)' }
-                      : { background: 'var(--bg-sunken)', border: '1px solid var(--rust-dim)', ...HATCH_STYLE }
-                  }
-                />
-                {/* .t-label задаёт цвет ink-faint неслойным CSS-правилом, которое перебивает
-                    слойные Tailwind-утилиты text-*, поэтому цвет — инлайн-стилем (не касается
-                    globals.css/tokens.css — эти файлы вне зоны ответственности агента). */}
-                <span className={cn('t-label', isControlled ? 'text-acid' : 'text-rust')}>
+                <span aria-hidden="true">
+                  {isControlled ? (
+                    <Check weight="regular" size={18} color="var(--ink)" />
+                  ) : (
+                    <Question weight="regular" size={18} color="var(--ink-secondary)" />
+                  )}
+                </span>
+                <span className={cn('t-caption', isControlled ? 'text-ink' : 'text-ink-secondary')}>
                   {segment.label}
                 </span>
               </button>
-              {!isLast && (
-                <CaretRight
-                  aria-hidden="true"
-                  weight="regular"
-                  size={14}
-                  color="var(--ink-faint)"
-                  className="self-center"
-                />
-              )}
-            </div>
+
+              <AnimatePresence initial={false}>
+                {isOpen && (
+                  <motion.p
+                    className="t-body-sm px-1 text-ink-secondary"
+                    initial={reduced ? { opacity: 0 } : { opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: reduced ? 0.12 : 0.2, ease: easeOut }}
+                  >
+                    {segment.description}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+            </motion.div>
           );
         })}
       </div>
-
-      <AnimatePresence>
-        {Object.keys(expanded)
-          .filter((id) => expanded[id])
-          .map((id) => {
-            const segment = segments.find((s) => s.id === id);
-            if (!segment) return null;
-            return (
-              <motion.p
-                key={id}
-                className="t-body-s text-ink-muted"
-                initial={reduced ? { opacity: 0 } : { opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: reduced ? 0.12 : 0.2, ease: easeOut }}
-              >
-                {segment.description}
-              </motion.p>
-            );
-          })}
-      </AnimatePresence>
 
       <AnimatePresence>
         {phase === 'done' && (
@@ -157,7 +130,7 @@ export function LeakScanner({ data, onComplete }: LeakScannerProps) {
             transition={{ duration: reduced ? 0.12 : 0.26, ease: easeOut }}
           >
             Ты видишь{' '}
-            <span style={{ color: 'var(--acid)', fontFamily: 'var(--font-mono)' }}>
+            <span className="tnum" style={{ fontFamily: 'var(--font-mono)' }}>
               {controlledIds.length}
             </span>{' '}
             из {segments.length}. Клиент оценивает все {segments.length}.

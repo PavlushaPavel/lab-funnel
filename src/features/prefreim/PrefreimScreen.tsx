@@ -1,14 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { AnimatePresence, motion, useScroll, useTransform } from 'motion/react';
 import { ArrowDown } from '@phosphor-icons/react';
 import { Prose } from '../../ui/Prose';
 import { Quote } from '../../ui/Quote';
 import { Bullets } from '../../ui/Bullets';
-import { Panel } from '../../ui/Panel';
 import { Button } from '../../ui/Button';
-import { Divider } from '../../ui/Divider';
-import { NodeLabel } from '../../ui/NodeLabel';
-import { Grain } from '../../ui/Grain';
 import { easeOut, listItem, useReducedMotionSafe } from '../../lib/motion';
 import { track } from '../../lib/analytics';
 import { haptics } from '../../lib/telegram';
@@ -31,16 +28,23 @@ import {
 /**
  * Локальные величины экрана-лонгрида. Пружины/базовые длительности — только из lib/motion.ts
  * (ARCHITECTURE.md §6, §11.3), но точечные настройки конкретного скролл-ридера собраны здесь
- * одним объектом, а не разбросаны магическими числами по JSX (по аналогии с IntroScreen.BOOT).
+ * одним объектом, а не разбросаны магическими числами по JSX.
  */
 const LOCAL = {
-  progressBarHeight: 6, // px, тонкая полоса прогресса чтения сверху
+  progressBarHeight: 3, // px, плоская линия прогресса чтения сверху (DESIGN.md §6 ProgressRail)
   ctaFade: { duration: 0.2, ease: easeOut },
   revealViewport: { once: true, margin: '-72px 0px -8% 0px' }, // окно срабатывания reveal
+  finalLineDelay: 0.06, // сдвиг второй строки финального акцента, с
 } as const;
 
-/** Абзацы с reveal-анимацией при попадании во вьюпорт: opacity+y, easeOut (DESIGN.md §8).
- * Сдержанно, без зацикливания, полностью отключается для prefers-reduced-motion (DESIGN.md §9). */
+/** Двузначная моно-нумерация — техническая аннотация системы (DESIGN.md §6). */
+const pad2 = (n: number) => String(n).padStart(2, '0');
+
+/** Разделитель разделов — волосяная линия --hairline (DESIGN.md §3), без калибровочных шкал. */
+const RULE = '1px solid var(--hairline)';
+
+/** Абзацы с reveal при скролле: только opacity + y 8px (DESIGN.md §7), полностью снимается
+ * при prefers-reduced-motion. */
 function RevealParagraphs({ paragraphs, reduced }: { paragraphs: string[]; reduced: boolean }) {
   return (
     <Prose>
@@ -63,32 +67,70 @@ function RevealParagraphs({ paragraphs, reduced }: { paragraphs: string[]; reduc
   );
 }
 
-/** Выделяет цену сигнальным цветом внутри дословного абзаца из брифа. Текст не меняется —
- * только оборачивается участок строки, совпадающий с PRICE_TEXT, в моно-акцент. */
+/** Выделяет цену микроакцентом --voltage внутри дословного абзаца из брифа. Текст не меняется —
+ * только участок строки, совпадающий с PRICE_TEXT, получает подсветку словом (DESIGN.md §3).
+ * Это единственное место всего экрана, где --voltage применён. */
 function withPriceHighlight(text: string) {
   const idx = text.indexOf(PRICE_TEXT);
   if (idx === -1) return text;
   return (
     <>
       {text.slice(0, idx)}
-      <span className="font-mono font-semibold text-acid tnum">{PRICE_TEXT}</span>
+      <span
+        className="tnum"
+        style={{
+          background: 'var(--voltage)',
+          color: 'var(--ink)',
+          padding: '0 4px',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {PRICE_TEXT}
+      </span>
       {text.slice(idx + PRICE_TEXT.length)}
     </>
   );
 }
 
-/** Заголовок раздела: фирменная моно-маркировка узла «01 · ПРО ТЕБЯ» (DESIGN.md §6.2). */
+/** Белая карточка контента с моно-лейблом. Локальная, чтобы схемы и списки лонгрида читались
+ * как редакционные блоки, без статус-точек и приборных метафор (DESIGN.md §6). */
+function Card({ label, children }: { label?: string; children: ReactNode }) {
+  return (
+    <div className="grid gap-2 rounded-card bg-card p-(--card-pad)">
+      {label && <span className="t-caption">{label}</span>}
+      {children}
+    </div>
+  );
+}
+
+/** Шапка раздела: моно-номер + заглавный заголовок (DESIGN.md §4). */
 function SectionHead({ code, title }: { code: string; title: string }) {
-  return <NodeLabel code={code} title={title} status="active" />;
+  return (
+    <div className="grid gap-2">
+      <span className="t-caption tnum">{code}</span>
+      <h2 className="t-heading-lg text-ink">{title}</h2>
+    </div>
+  );
+}
+
+/** Раздел лонгрида: разделитель --hairline сверху, дальше вертикальный ритм внутри. */
+function Section({ code, title, children }: { code: string; title: string; children: ReactNode }) {
+  return (
+    <section className="grid gap-(--sp-3) pt-(--sp-3)" style={{ borderTop: RULE }}>
+      <SectionHead code={code} title={title} />
+      {children}
+    </section>
+  );
 }
 
 /**
  * Лонгрид-префрейм (`PrefreimScreen`) — закреплённый пост-лендинг вне основного потока
- * воронки (ARCHITECTURE.md §2). Режим Persuade (DESIGN.md §1): дизайн здесь и есть продукт —
- * задача экрана в том, чтобы длинный текст дочитали до конца и нажали единственную кнопку.
+ * воронки (ARCHITECTURE.md §2). Самый типографический экран проекта: брутально-редакционный
+ * язык v3 раскрывается здесь полностью — гигантский сжатый заголовок над спокойным текстом
+ * 16px, моно-нумерация разделов, волосяные разделители, белые карточки на сером холсте.
+ * Ни одной тени, ни одного градиента (DESIGN.md §2.1, §2.2). Копирайт дословный.
  *
- * Компонент — собственная точка входа (не рендерится внутри App.tsx), поэтому сам несёт Grain,
- * которую в остальном приложении ставит один раз App (DESIGN.md §6.5).
+ * Компонент — собственная точка входа (не рендерится внутри App.tsx).
  */
 export function PrefreimScreen() {
   const reduced = useReducedMotionSafe();
@@ -131,62 +173,52 @@ export function PrefreimScreen() {
 
   return (
     <>
-      <Grain />
-
-      {/* Полоса прогресса чтения — визуальный язык TickRail (риски + сигнальная заливка),
-          DESIGN.md §6.1. Полностью на motion-значении, без React-стейта на каждый кадр скролла. */}
+      {/* Прогресс чтения — плоская линия: трек --hairline, заливка --ink (DESIGN.md §6).
+          Полностью на motion-значении, без React-стейта на каждый кадр скролла. */}
       <div
-        className="fixed inset-x-0 top-0 z-40 bg-void"
-        style={{ height: LOCAL.progressBarHeight }}
+        className="fixed inset-x-0 top-0 z-40"
+        style={{ height: LOCAL.progressBarHeight, background: 'var(--hairline)' }}
         aria-hidden="true"
       >
-        <div className="relative h-full w-full overflow-hidden">
-          <div className="tick-rail-fill" style={{ ['--tick-color' as string]: 'var(--line)' }} />
-          <motion.div className="absolute inset-y-0 left-0 overflow-hidden" style={{ width: fillWidth }}>
-            <div className="tick-rail-fill" style={{ ['--tick-color' as string]: 'var(--acid)' }} />
-          </motion.div>
-        </div>
+        <motion.div className="h-full bg-ink" style={{ width: fillWidth }} />
       </div>
 
       <main
-        className="mx-auto grid max-w-(--app-max) gap-8 px-(--gutter)"
+        className="mx-auto grid max-w-(--app-max) gap-(--section-gap) px-(--gutter)"
         style={{
           paddingTop: `calc(${LOCAL.progressBarHeight}px + max(var(--sp-5), env(safe-area-inset-top)))`,
-          paddingBottom: 'calc(var(--bar-h) + var(--sp-7) + env(safe-area-inset-bottom))',
+          paddingBottom: 'calc(var(--bar-h) + var(--sp-4) + env(safe-area-inset-bottom))',
         }}
       >
-        {/* ---- Герой ---- */}
-        <header className="grid gap-4">
-          <NodeLabel code={META.code} title={META.kicker} status="active" />
+        {/* ---- Герой: витрина всего стиля. Один дисплейный заголовок на экран (DESIGN.md §4). ---- */}
+        <header className="grid gap-(--sp-2)">
+          <span className="t-caption">
+            {META.code} · {META.kicker}
+          </span>
           <h1 className="t-display-xl text-ink">{META.title}</h1>
-          <p className="t-h2 text-ink-muted">{META.subtitle}</p>
+          <p className="t-subheading text-ink-secondary">{META.subtitle}</p>
         </header>
 
-        <RevealParagraphs paragraphs={INTRO.before} reduced={reduced} />
-        <Bullets items={INTRO.list} />
-        <RevealParagraphs paragraphs={INTRO.after} reduced={reduced} />
-
-        {/* Граница первого экрана — после неё появляется липкая CTA. */}
-        <div ref={heroSentinelRef} aria-hidden="true" />
-
-        <Divider />
+        <div className="grid gap-(--sp-3)">
+          <RevealParagraphs paragraphs={INTRO.before} reduced={reduced} />
+          <Bullets items={INTRO.list} />
+          <RevealParagraphs paragraphs={INTRO.after} reduced={reduced} />
+          {/* Граница первого экрана — после неё появляется липкая CTA. */}
+          <div ref={heroSentinelRef} aria-hidden="true" />
+        </div>
 
         {/* ---- 01 · ПРО ТЕБЯ ---- */}
-        <section className="grid gap-4">
-          <SectionHead code={SECTION_1.code} title={SECTION_1.title} />
+        <Section code={SECTION_1.code} title={SECTION_1.title}>
           <RevealParagraphs paragraphs={SECTION_1.paragraphs} reduced={reduced} />
-        </section>
-
-        <Divider />
+        </Section>
 
         {/* ---- 02 · ПРО ТО, КАК ТЫ ТЕРЯЕШЬ БАБКИ ---- */}
-        <section className="grid gap-4">
-          <SectionHead code={SECTION_2.code} title={SECTION_2.title} />
-          <p className="t-body text-ink-muted">{SECTION_2.lead}</p>
-          <div className="grid gap-5">
+        <Section code={SECTION_2.code} title={SECTION_2.title}>
+          <p className="t-body text-ink-secondary">{SECTION_2.lead}</p>
+          <div className="grid gap-(--sp-3)">
             {SECTION_2.variants.map((variant, i) => (
               <div key={i} className="grid gap-2">
-                <span className="t-label text-acid">ВАРИАНТ {String(i + 1).padStart(2, '0')}</span>
+                <span className="t-caption tnum">ВАРИАНТ {pad2(i + 1)}</span>
                 {reduced ? (
                   <Quote>{variant}</Quote>
                 ) : (
@@ -202,78 +234,71 @@ export function PrefreimScreen() {
               </div>
             ))}
           </div>
-        </section>
-
-        <Divider />
+        </Section>
 
         {/* ---- 03 · ПРО ФОКУС — смысловой центр: рекламный кабинет vs вся система ---- */}
-        <section className="grid gap-4">
-          <SectionHead code={SECTION_3.code} title={SECTION_3.title} />
+        <Section code={SECTION_3.code} title={SECTION_3.title}>
           <RevealParagraphs paragraphs={SECTION_3.paragraphs.slice(0, 3)} reduced={reduced} />
 
+          {/* Схема-контраст: две белые карточки и стрелка между ними. Никаких приборных
+              метафор — только контраст поверхностей и типографика. */}
           <div className="grid gap-2">
-            <Panel label="ТЫ ВИДИШЬ" status="locked">
-              <p className="t-h2 text-ink-muted">Рекламный кабинет.</p>
-            </Panel>
+            <Card label="ТЫ ВИДИШЬ">
+              <p className="t-subheading text-ink-secondary">Рекламный кабинет.</p>
+            </Card>
 
-            <div className="grid justify-items-center py-1" aria-hidden="true">
-              <ArrowDown weight="regular" size={18} color="var(--ink-faint)" />
+            <div className="grid justify-items-center" aria-hidden="true">
+              <ArrowDown weight="regular" size={18} color="var(--ink-muted)" />
             </div>
 
-            <Panel label="КЛИЕНТ ОЦЕНИВАЕТ ВСЮ СИСТЕМУ" status="active">
+            <Card label="КЛИЕНТ ОЦЕНИВАЕТ ВСЮ СИСТЕМУ">
               <ol className="grid">
                 {SECTION_3.chain.map((step, i) => (
                   <li
                     key={step}
                     className="grid grid-cols-[28px_1fr] items-baseline gap-2 py-2"
-                    style={i > 0 ? { borderTop: '1px solid var(--line)' } : undefined}
+                    style={i > 0 ? { borderTop: RULE } : undefined}
                   >
-                    <span className="t-readout-s text-acid">{String(i + 1).padStart(2, '0')}</span>
-                    <span className="t-body-s text-ink">{step}</span>
+                    <span className="t-caption tnum text-ink">{pad2(i + 1)}</span>
+                    <span className="t-body-sm text-ink">{step}</span>
                   </li>
                 ))}
               </ol>
-            </Panel>
+            </Card>
           </div>
 
           <RevealParagraphs paragraphs={SECTION_3.paragraphs.slice(3)} reduced={reduced} />
-        </section>
+        </Section>
 
-        <Divider />
-
-        {/* ---- 04 · ПРО НЕЙРОНКИ — переписка + 8 шагов отдельными визуальными блоками ---- */}
-        <section className="grid gap-4">
-          <SectionHead code={SECTION_4.code} title={SECTION_4.title} />
+        {/* ---- 04 · ПРО НЕЙРОНКИ — диалог двумя карточками-репликами + 8 шагов ---- */}
+        <Section code={SECTION_4.code} title={SECTION_4.title}>
           <RevealParagraphs paragraphs={SECTION_4.before} reduced={reduced} />
 
-          <div className="grid gap-2">
+          {/* Диалог: вопрос на белой карточке, тупой ответ — на тихой подложке --mist. */}
+          <div className="grid gap-(--sp-2)">
             <div className="grid justify-items-end gap-1">
-              <span className="t-label">{SECTION_4.chat.author}</span>
+              <span className="t-caption">{SECTION_4.chat.author}</span>
               <p
-                className="t-body-s text-ink"
+                className="t-body text-ink"
                 style={{
-                  maxWidth: '85%',
-                  background: 'var(--bg-panel)',
-                  border: '1px solid var(--line)',
-                  borderRadius: 'var(--radius-lg)',
-                  padding: '12px 16px',
-                  boxShadow: 'var(--shadow-panel-sheen)',
+                  maxWidth: '88%',
+                  background: 'var(--card)',
+                  borderRadius: 'var(--r-card)',
+                  padding: 'var(--sp-2)',
                 }}
               >
                 {SECTION_4.chat.query}
               </p>
             </div>
             <div className="grid justify-items-start gap-1">
-              <span className="t-label">{SECTION_4.chat.replyAuthor}</span>
+              <span className="t-caption">{SECTION_4.chat.replyAuthor}</span>
               <p
-                className="t-body-s text-ink-muted"
+                className="t-body text-ink-secondary"
                 style={{
-                  maxWidth: '85%',
-                  background: 'var(--bg-raised)',
-                  border: '1px solid var(--line-strong)',
-                  borderRadius: 'var(--radius-lg)',
-                  padding: '12px 16px',
-                  boxShadow: 'var(--shadow-panel-sheen)',
+                  maxWidth: '88%',
+                  background: 'var(--mist)',
+                  borderRadius: 'var(--r-card)',
+                  padding: 'var(--sp-2)',
                 }}
               >
                 {SECTION_4.chat.reply}
@@ -281,50 +306,49 @@ export function PrefreimScreen() {
             </div>
           </div>
 
-          <p className="t-h2 text-acid">{SECTION_4.punchline}</p>
+          {/* Панчлайн — крупный типографический удар сразу после тупого ответа. */}
+          <p className="t-heading-lg text-ink" style={{ maxWidth: 'none' }}>
+            {SECTION_4.punchline}
+          </p>
 
           <RevealParagraphs paragraphs={SECTION_4.middle} reduced={reduced} />
 
-          <Panel label="ПОСЛЕДОВАТЕЛЬНОСТЬ" status="active">
+          <Card label="ПОСЛЕДОВАТЕЛЬНОСТЬ">
             <ol className="grid grid-cols-2 gap-x-4 gap-y-3">
               {SECTION_4.steps.map((step, i) => (
                 <li key={step} className="grid grid-cols-[24px_1fr] items-baseline gap-2">
-                  <span className="t-label text-ink-faint">{String(i + 1).padStart(2, '0')}</span>
-                  <span className="t-body-s text-ink">{step}</span>
+                  <span className="t-caption tnum">{pad2(i + 1)}</span>
+                  <span className="t-body-sm text-ink">{step}</span>
                 </li>
               ))}
             </ol>
-          </Panel>
+          </Card>
 
           <RevealParagraphs paragraphs={SECTION_4.after} reduced={reduced} />
-        </section>
+        </Section>
 
-        <Divider />
+        {/* ---- 05 · ПРО ТО, ЧТО БУДЕТ ВНУТРИ — три единицы контента ---- */}
+        <Section code={SECTION_5.code} title={SECTION_5.title}>
+          <p className="t-body text-ink-secondary">{SECTION_5.lead}</p>
 
-        {/* ---- 05 · ПРО ТО, ЧТО БУДЕТ ВНУТРИ — М-01 / М-02 / М-03 ---- */}
-        <section className="grid gap-4">
-          <SectionHead code={SECTION_5.code} title={SECTION_5.title} />
-          <p className="t-body text-ink-muted">{SECTION_5.lead}</p>
-
-          <div className="grid gap-3">
+          <div className="grid gap-2">
             {SECTION_5.modules.map((m) => (
-              <Panel key={m.code} label={`${m.code} · ${m.title}`} status="active">
-                <p className="t-label text-ink-faint">{m.ordinal}</p>
-                <p className="t-body text-ink" style={{ marginTop: 6 }}>
-                  {m.text}
-                </p>
-              </Panel>
+              <div key={m.code} className="grid gap-2 rounded-card bg-card p-(--card-pad)">
+                <div className="flex flex-wrap items-baseline gap-2">
+                  <span className="t-caption tnum text-ink">{m.code}</span>
+                  <span className="t-caption">{m.ordinal}</span>
+                </div>
+                <h3 className="t-heading text-ink">{m.title}</h3>
+                <p className="t-body text-ink-secondary">{m.text}</p>
+              </div>
             ))}
           </div>
 
           <RevealParagraphs paragraphs={SECTION_5.after} reduced={reduced} />
-        </section>
+        </Section>
 
-        <Divider />
-
-        {/* ---- 06 · ПРО ТО, ЧТО Я ТЕБЕ ПРОДАМ ---- */}
-        <section className="grid gap-4">
-          <SectionHead code={SECTION_6.code} title={SECTION_6.title} />
+        {/* ---- 06 · ПРО ТО, ЧТО Я ТЕБЕ ПРОДАМ — здесь единственный --voltage экрана ---- */}
+        <Section code={SECTION_6.code} title={SECTION_6.title}>
           <Prose>
             {SECTION_6.paragraphs.map((p, i) =>
               reduced ? (
@@ -342,19 +366,16 @@ export function PrefreimScreen() {
               )
             )}
           </Prose>
-        </section>
-
-        <Divider />
+        </Section>
 
         {/* ---- 07 · ЧТО ТЕБЕ ДЕЛАТЬ ---- */}
-        <section className="grid gap-4">
-          <SectionHead code={SECTION_7.code} title={SECTION_7.title} />
-          <p className="t-body text-ink-muted">{SECTION_7.lead}</p>
+        <Section code={SECTION_7.code} title={SECTION_7.title}>
+          <p className="t-body text-ink-secondary">{SECTION_7.lead}</p>
 
-          <div className="grid gap-5">
+          <div className="grid gap-(--sp-3)">
             {SECTION_7.options.map((option, i) => (
               <div key={i} className="grid gap-2">
-                <span className="t-label text-ink-faint">{String(i + 1).padStart(2, '0')}</span>
+                <span className="t-caption tnum">{pad2(i + 1)}</span>
                 {reduced ? (
                   <p className="t-body text-ink">{option}</p>
                 ) : (
@@ -374,17 +395,17 @@ export function PrefreimScreen() {
 
           <RevealParagraphs paragraphs={SECTION_7.after} reduced={reduced} />
 
-          {/* Финальный акцент — последнее, что человек читает перед кнопкой. */}
-          <div className="grid gap-1 py-4 text-center">
+          {/* Финальный акцент — максимальный типографический удар перед кнопкой. */}
+          <div className="grid gap-1 pt-(--sp-3)">
             {reduced ? (
               <>
-                <p className="t-display-l text-ink">{SECTION_7.final[0]}</p>
-                <p className="t-display-l text-acid">{SECTION_7.final[1]}</p>
+                <p className="t-display text-ink">{SECTION_7.final[0]}</p>
+                <p className="t-display text-ink">{SECTION_7.final[1]}</p>
               </>
             ) : (
               <>
                 <motion.p
-                  className="t-display-l text-ink"
+                  className="t-display text-ink"
                   variants={listItem}
                   initial="hidden"
                   whileInView="show"
@@ -393,38 +414,41 @@ export function PrefreimScreen() {
                   {SECTION_7.final[0]}
                 </motion.p>
                 <motion.p
-                  className="t-display-l text-acid"
+                  className="t-display text-ink"
                   variants={listItem}
                   initial="hidden"
                   whileInView="show"
                   viewport={LOCAL.revealViewport}
-                  transition={{ delay: 0.06 }}
+                  transition={{ delay: LOCAL.finalLineDelay }}
                 >
                   {SECTION_7.final[1]}
                 </motion.p>
               </>
             )}
           </div>
-        </section>
+        </Section>
       </main>
 
       {/* Липкая нижняя CTA — появляется после прокрутки первого экрана. Fixed, а не sticky:
           ui/BottomBar рассчитан на одноэкранные шаги воронки (min-h-dvh), а здесь длинный
-          скролл-документ, поэтому панель собрана локально с тем же визуальным контрактом
-          (граница, bg-void, safe-area), но position: fixed. Монтируется/размонтируется через
+          скролл-документ, поэтому панель собрана локально: белая арка --r-arc, «выходящая»
+          снизу (DESIGN.md §5, §6), safe-area, без тени. Монтируется/размонтируется через
           AnimatePresence — так скрытая кнопка не остаётся в таб-порядке и не перехватывает тапы. */}
       <AnimatePresence>
         {ctaVisible && (
           <motion.div
-            className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-void"
-            style={{ paddingBottom: 'max(var(--sp-4), env(safe-area-inset-bottom))' }}
+            className="fixed inset-x-0 bottom-0 z-30 bg-card"
+            style={{
+              borderRadius: 'var(--r-arc) var(--r-arc) 0 0',
+              paddingBottom: 'max(var(--sp-2), env(safe-area-inset-bottom))',
+            }}
             initial={reduced ? { opacity: 0 } : { opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={reduced ? { opacity: 0 } : { opacity: 0, y: 12 }}
             transition={LOCAL.ctaFade}
           >
             <div
-              className="mx-auto grid max-w-(--app-max) gap-2 px-(--gutter) pt-3"
+              className="mx-auto grid max-w-(--app-max) items-center gap-2 px-(--gutter) pt-(--sp-2)"
               style={{ minHeight: 'var(--bar-h)' }}
             >
               <Button variant="primary" full onClick={handleCta}>

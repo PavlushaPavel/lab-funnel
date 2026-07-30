@@ -2,7 +2,6 @@ import { Screen } from '../../ui/Screen';
 import { BottomBar } from '../../ui/BottomBar';
 import { Button } from '../../ui/Button';
 import { ChoiceList } from '../../ui/ChoiceList';
-import { Prose } from '../../ui/Prose';
 import { SCREENS } from '../../content/screens';
 import { SPECIALIZATIONS } from '../../content/specializations';
 import { useFunnelStore, type Spec } from '../../store/funnel';
@@ -34,12 +33,14 @@ export function SpecScreen() {
 
   return (
     <Screen id="spec" phase="know">
-      <h1 className="t-display-l text-ink">{copy.title}</h1>
-      <Prose>
+      <h1 className="t-display text-ink">{copy.title}</h1>
+      <div className="grid gap-3">
         {copy.body?.map((p, i) => (
-          <p key={i}>{p}</p>
+          <p key={i} className="t-body text-ink-secondary">
+            {p}
+          </p>
         ))}
-      </Prose>
+      </div>
 
       <ChoiceList options={SPEC_OPTIONS} value={spec} onChange={handleChange} />
 

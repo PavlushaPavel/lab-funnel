@@ -1,12 +1,13 @@
 import { Screen } from '../../ui/Screen';
 import { BottomBar } from '../../ui/BottomBar';
 import { Button } from '../../ui/Button';
+import { motion } from 'motion/react';
 import { ChoiceList } from '../../ui/ChoiceList';
-import { TickRail } from '../../ui/TickRail';
 import { QUIZ_QUESTIONS } from '../../content/quiz';
 import { useFunnelStore } from '../../store/funnel';
 import { track } from '../../lib/analytics';
 import { haptics } from '../../lib/telegram';
+import { springPanel, useReducedMotionSafe } from '../../lib/motion';
 
 const TOTAL = QUIZ_QUESTIONS.length;
 
@@ -24,6 +25,7 @@ export function QuizScreen() {
   const answerQuiz = useFunnelStore((s) => s.answerQuiz);
   const finishQuiz = useFunnelStore((s) => s.finishQuiz);
   const next = useFunnelStore((s) => s.next);
+  const reduced = useReducedMotionSafe();
 
   const question = QUIZ_QUESTIONS[index];
   const answeredOptIndex = quizAnswers[index];
@@ -61,14 +63,29 @@ export function QuizScreen() {
 
   return (
     <Screen id="quiz" phase="know">
-      <div className="grid grid-cols-[1fr_auto] items-center gap-3">
-        <TickRail progress={progress} height={12} />
-        <span className="t-label text-ink-faint">
+      {/* Прогресс теста — тонкая линия 3px (DESIGN.md §6 ProgressRail): трек --hairline,
+          пройденная часть --ink. Калибровочной шкалы v1/v2 в этом мире нет. */}
+      <div className="grid gap-2">
+        <p className="t-caption tnum">
           ВОПРОС {String(index + 1).padStart(2, '0')} / {String(TOTAL).padStart(2, '0')}
-        </span>
+        </p>
+        <div
+          className="h-[3px] w-full overflow-hidden rounded-pill bg-hairline"
+          role="progressbar"
+          aria-valuenow={Math.round(progress * 100)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        >
+          <motion.div
+            className="h-full rounded-pill bg-ink"
+            initial={false}
+            animate={{ width: `${progress * 100}%` }}
+            transition={reduced ? { duration: 0 } : springPanel}
+          />
+        </div>
       </div>
 
-      <h1 className="t-h1 text-ink">{question.question}</h1>
+      <h1 className="t-heading text-ink">{question.question}</h1>
 
       <ChoiceList
         options={question.options}
@@ -77,7 +94,20 @@ export function QuizScreen() {
         revealCorrect={isAnswered ? question.correctId : undefined}
       />
 
-      {isAnswered && <p className="t-body-s text-ink-muted">{question.explain}</p>}
+      {/* Разбор ответа. Цвет верно/неверно несёт сам Choice (--mint / --alert, §6),
+          разбор остаётся спокойным текстом на белой карточке. */}
+      {isAnswered && (
+        <motion.div
+          key={index}
+          className="rounded-card bg-card"
+          style={{ padding: 'var(--card-pad)' }}
+          initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={reduced ? { duration: 0.12 } : springPanel}
+        >
+          <p className="t-body-sm text-ink-secondary">{question.explain}</p>
+        </motion.div>
+      )}
 
       <BottomBar>
         {index > 0 ? (

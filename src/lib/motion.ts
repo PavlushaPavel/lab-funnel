@@ -1,5 +1,7 @@
 /**
- * Единственный источник пружин/длительностей анимации (DESIGN.md §8).
+ * Единственный источник пружин/длительностей анимации (DESIGN.md §7).
+ * MOTION_INTENSITY: 4 — редакционный печатный мир не суетится: движение тише,
+ * чем в снятых версиях, горизонтальных пролётов нет.
  * Никаких инлайновых магических чисел анимации вне этого файла.
  */
 import { useReducedMotion } from 'motion/react';
@@ -10,11 +12,11 @@ export const springPanel: Transition = { type: 'spring', stiffness: 280, damping
 export const springSoft: Transition = { type: 'spring', stiffness: 180, damping: 26, mass: 1.1 }; // крупные счётчики
 export const easeOut: [number, number, number, number] = [0.16, 1, 0.3, 1]; // непружинные
 
-/** Переход между экранами: выход — opacity+x за 160ms, вход — springPanel. */
+/** Переход между экранами (§7): только opacity + короткий y 8px, без горизонтальных пролётов. */
 export const screenVariants: Variants = {
-  enter: { opacity: 0, x: 20 },
-  center: { opacity: 1, x: 0, transition: springPanel },
-  exit: { opacity: 0, x: -16, transition: { duration: 0.16, ease: easeOut } },
+  enter: { opacity: 0, y: 8 },
+  center: { opacity: 1, y: 0, transition: springPanel },
+  exit: { opacity: 0, y: -8, transition: { duration: 0.16, ease: easeOut } },
 };
 
 /** Контейнер списка: stagger 40ms между детьми. */
@@ -23,9 +25,9 @@ export const listStagger: Variants = {
   show: { transition: { staggerChildren: 0.04 } },
 };
 
-/** Элемент списка: y 10px -> 0, opacity 0 -> 1, easeOut 260ms. */
+/** Элемент списка (§7): y 8px -> 0, opacity 0 -> 1, easeOut 260ms. */
 export const listItem: Variants = {
-  hidden: { opacity: 0, y: 10 },
+  hidden: { opacity: 0, y: 8 },
   show: { opacity: 1, y: 0, transition: { duration: 0.26, ease: easeOut } },
 };
 

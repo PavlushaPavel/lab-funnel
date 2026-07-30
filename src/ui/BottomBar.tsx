@@ -1,22 +1,25 @@
 import type { ReactNode } from 'react';
 
+/**
+ * Липкая нижняя панель действия (DESIGN.md v3 §5): плоская, на --canvas,
+ * с верхней границей --hairline, высота --bar-h, safe-area обязательна.
+ */
 interface BottomBarProps {
   hint?: string;
   children: ReactNode;
 }
 
-/** Липкая нижняя панель действия с safe-area (высота --bar-h, ARCHITECTURE.md §7). */
 export function BottomBar({ hint, children }: BottomBarProps) {
   return (
     <div
-      className="sticky bottom-0 z-30 border-t border-line bg-void"
-      style={{ paddingBottom: 'max(var(--sp-4), env(safe-area-inset-bottom))' }}
+      className="sticky bottom-0 z-30 border-t border-hairline bg-canvas"
+      style={{ paddingBottom: 'max(var(--sp-2), env(safe-area-inset-bottom))' }}
     >
       <div
         className="mx-auto grid max-w-(--app-max) gap-2 px-(--gutter) pt-3"
         style={{ minHeight: 'var(--bar-h)' }}
       >
-        {hint && <p className="t-label text-center text-ink-faint">{hint}</p>}
+        {hint && <p className="t-caption text-center">{hint}</p>}
         {children}
       </div>
     </div>

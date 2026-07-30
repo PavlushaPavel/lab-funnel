@@ -5,12 +5,12 @@ import { screenRegistry, preloadStep } from './router/registry';
 import { nextStep } from './router/flow';
 import { setBackButton } from './lib/telegram';
 import { scheduleIdle } from './lib/idle';
-import { Grain } from './ui/Grain';
 import { ProgressRail } from './ui/ProgressRail';
 import { StepFallback } from './ui/StepFallback';
 
 /**
- * Шелл приложения: зерно + верхний рельс + анимированная область шага.
+ * Шелл приложения: верхний рельс + анимированная область шага.
+ * Зерна и световых пятен в мире v3 нет (DESIGN.md §2.10).
  * Экран каждого StepId подставляется из screenRegistry — следующие волны
  * заменяют записи реестра на реальные экраны, не трогая этот файл.
  *
@@ -38,7 +38,6 @@ export default function App() {
 
   return (
     <>
-      <Grain />
       <ProgressRail />
       <AnimatePresence mode="wait" initial={false}>
         <Suspense key={step} fallback={<StepFallback />}>

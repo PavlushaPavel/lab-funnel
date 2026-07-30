@@ -28,7 +28,7 @@ export function M2IntroScreen() {
 
   return (
     <Screen id="m2-intro" phase="want">
-      <h1 className="t-display-l text-ink">{copy.title}</h1>
+      <h1 className="t-display text-ink">{copy.title}</h1>
       <Prose>
         {copy.body?.map((paragraph, i) => (
           <p key={i}>{paragraph}</p>
@@ -37,12 +37,12 @@ export function M2IntroScreen() {
 
       <motion.div
         className="grid justify-items-center gap-3 py-4"
-        initial={reduced ? { opacity: 0 } : { opacity: 0, y: 10 }}
+        initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: reduced ? 0.12 : 0.3, ease: easeOut }}
       >
         <ModuleBadge code={MODULE.code} title={MODULE.title} state="locked" size="lg" />
-        <p className="t-label text-ink-faint">ЗАПЕРТО · ОТКРОЕТСЯ КОДОМ</p>
+        <p className="t-caption">ЗАПЕРТО · ОТКРОЕТСЯ КОДОМ</p>
       </motion.div>
 
       <BottomBar>

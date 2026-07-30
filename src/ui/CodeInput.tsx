@@ -12,7 +12,13 @@ interface CodeInputProps {
 
 type Status = 'idle' | 'error' | 'success';
 
-/** Ключевое слово-код: утопленные слоты + скрытый input (DESIGN.md §7 CodeInput). */
+/**
+ * Поле кода (DESIGN.md v3 §6 CodeInput): ряд слотов на --mist с --r-input, моно заглавные 22px.
+ * Активный слот — нижняя граница 2px --ink. Ошибка — граница --alert + shake.
+ * Успех — слоты последовательно заливаются --mint. Ни тени, ни утопленности: мир плоский (§2.1).
+ */
+const SLOT_UNDERLINE = 2;
+
 export function CodeInput({ length, onSubmit, hint }: CodeInputProps) {
   const [value, setValue] = useState('');
   const [status, setStatus] = useState<Status>('idle');
@@ -52,39 +58,42 @@ export function CodeInput({ length, onSubmit, hint }: CodeInputProps) {
 
   return (
     <div className="grid gap-2">
-      <p className="t-label text-ink-faint">Ключевое слово</p>
+      <p className="t-caption">Ключевое слово</p>
       <button
         key={shakeTick}
         type="button"
         onClick={focusInput}
-        aria-label="Код доступа"
+        aria-label="Ключевое слово"
         className={cn(
-          'grid w-full auto-cols-fr grid-flow-col gap-2 rounded-lg border-t border-line bg-sunken px-3 py-4',
+          'grid w-full auto-cols-fr grid-flow-col gap-2',
           status === 'error' && !reduced && 'anim-shake'
         )}
-        style={{ boxShadow: 'var(--shadow-well-inset)' }}
       >
         {Array.from({ length }).map((_, i) => {
           const char = value[i];
-          const isCursor = i === value.length && status === 'idle';
+          const isActive = i === value.length && status === 'idle';
           return (
             <span
               key={i}
-              className={cn(
-                'grid h-12 place-items-center rounded-sm border-b-2 text-center uppercase transition-colors',
-                status === 'error' ? 'border-bad' : char ? 'border-acid' : 'border-line',
-                status === 'success' && 'text-acid'
-              )}
+              className="grid h-14 place-items-center rounded-input text-center uppercase transition-colors"
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 22,
-                color: status === 'success' ? undefined : 'var(--ink)',
-                transitionDuration: '300ms',
+                color: 'var(--ink)',
+                // Успех — последовательная заливка мятой; в остальных состояниях слот на --mist
+                backgroundColor: status === 'success' ? 'var(--mint)' : 'var(--mist)',
+                // Ошибка — граница --alert. Активный слот — нижняя линия 2px --ink.
+                border: status === 'error' ? '1.5px solid var(--alert)' : undefined,
+                borderBottom:
+                  status === 'error'
+                    ? '1.5px solid var(--alert)'
+                    : `${SLOT_UNDERLINE}px solid ${isActive ? 'var(--ink)' : 'transparent'}`,
+                transitionDuration: `${Math.round(durations.tickDraw * 1000)}ms`,
                 transitionDelay:
                   status === 'success' ? `${Math.round(i * durations.codeCascade * 1000)}ms` : '0ms',
               }}
             >
-              {char ?? (isCursor && !reduced ? <span className="anim-cursor-blink text-acid">|</span> : '')}
+              {char ?? (isActive && !reduced ? <span className="anim-cursor-blink">|</span> : '')}
             </span>
           );
         })}
@@ -100,7 +109,11 @@ export function CodeInput({ length, onSubmit, hint }: CodeInputProps) {
         maxLength={length}
         className="sr-only"
       />
-      {hint && <p className="t-body-s text-center text-ink-muted">{hint}</p>}
+      {hint && (
+        <p className={cn('t-body-sm text-center', status === 'error' ? 'text-alert' : 'text-ink-muted')}>
+          {hint}
+        </p>
+      )}
     </div>
   );
 }

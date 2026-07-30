@@ -3,11 +3,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Check, CursorClick, X } from '@phosphor-icons/react';
 import type { Spec } from '../store/funnel';
 import type { BullshitDetectorData } from '../content/mechanics';
-import { Well } from '../ui/Well';
 import { Panel } from '../ui/Panel';
 import { Quote } from '../ui/Quote';
 import { Bullets } from '../ui/Bullets';
-import { Readout } from '../ui/Readout';
 import { cn } from '../lib/cn';
 import { haptics } from '../lib/telegram';
 import { listStagger, listItem, easeOut, useReducedMotionSafe } from '../lib/motion';
@@ -21,10 +19,17 @@ interface BullshitDetectorProps {
 
 type TapState = 'idle' | 'caught' | 'falsePositive';
 
+/** Двузначная нумерация счётчика — моно-аннотация системы (DESIGN.md §6, §4: числа табличные). */
+const pad2 = (n: number) => String(n).padStart(2, '0');
+
 /**
  * «Найди херню» (PRODUCT.md §4.2) — главная механика продукта. Пользователь тапает фразы,
- * которые считает водой. Верная находка → зачёркивание + сигнал. Ложное срабатывание на
- * конкретике → --bad + деадпан. onComplete — после того как найдена вся вода.
+ * которые считает водой. Верная находка → заливка --mint + зачёркивание. Ложное срабатывание
+ * на конкретике → рамка --alert + деадпан. onComplete — после того как найдена вся вода.
+ *
+ * Мир v3 (DESIGN.md §3, §6): фразы — белые карточки прямо на холсте, отделяются контрастом
+ * поверхности, без рамок и теней. Тап-аффорданса даётся иконкой курсора и кеглем .t-body,
+ * а не «приборной» обводкой из снятого тёмного мира.
  */
 export function BullshitDetector({ data, onComplete }: BullshitDetectorProps) {
   const [tapped, setTapped] = useState<Record<string, boolean>>({});
@@ -66,99 +71,91 @@ export function BullshitDetector({ data, onComplete }: BullshitDetectorProps) {
   };
 
   return (
-    <div className="grid gap-4">
-      <p className="t-body text-ink-muted">{data.intro}</p>
+    <div className="grid gap-(--sp-3)">
+      <p className="t-body text-ink-secondary">{data.intro}</p>
 
-      <Well>
-        {/* Карточки-фразы: крупный текст + бордер + иконка-курсор — явная аффорданса тапа.
-            Ключевая обучающая механика продукта, поэтому фразы должны читаться как кнопки
-            с первого взгляда, без подсказок. */}
-        <motion.div
-          className="grid gap-2"
-          variants={reduced ? undefined : listStagger}
-          initial={reduced ? undefined : 'hidden'}
-          animate={reduced ? undefined : 'show'}
-        >
-          {data.phrases.map((phrase) => {
-            const state = stateOf(phrase.id, phrase.isWater);
-            return (
-              <motion.div key={phrase.id} variants={reduced ? undefined : listItem}>
-                <button
-                  type="button"
-                  onClick={() => handleTap(phrase.id, phrase.isWater)}
-                  aria-pressed={tapped[phrase.id] ?? false}
-                  className={cn(
-                    'grid min-h-14 w-full grid-cols-[24px_1fr] items-start gap-3 rounded-md border bg-raised px-4 py-3.5 text-left',
-                    state === 'idle' && 'border-line',
-                    state === 'caught' && 'border-line-acid bg-acid-dim',
-                    state === 'falsePositive' && 'border-bad bg-bad-dim'
-                  )}
-                  style={{
-                    borderLeftWidth: state === 'idle' ? 1 : 2,
-                    borderLeftColor:
-                      state === 'caught' ? 'var(--acid)' : state === 'falsePositive' ? 'var(--bad)' : undefined,
-                  }}
-                >
-                  <span className="pt-0.5" aria-hidden="true">
-                    {state === 'idle' && <CursorClick weight="regular" size={18} color="var(--ink-faint)" />}
-                    {state === 'caught' && <Check weight="bold" size={18} color="var(--acid)" />}
-                    {state === 'falsePositive' && <X weight="bold" size={18} color="var(--bad)" />}
+      {/* Карточки-фразы: белая поверхность, крупный радиус, кегль .t-body и иконка курсора —
+          читаются как тапабельные с первого взгляда, без подсказок. Высота ≥56px (§8). */}
+      <motion.div
+        className="grid gap-2"
+        variants={reduced ? undefined : listStagger}
+        initial={reduced ? undefined : 'hidden'}
+        animate={reduced ? undefined : 'show'}
+      >
+        {data.phrases.map((phrase) => {
+          const state = stateOf(phrase.id, phrase.isWater);
+          return (
+            <motion.div key={phrase.id} variants={reduced ? undefined : listItem}>
+              <button
+                type="button"
+                onClick={() => handleTap(phrase.id, phrase.isWater)}
+                aria-pressed={tapped[phrase.id] ?? false}
+                className={cn(
+                  'grid min-h-14 w-full grid-cols-[20px_1fr] items-start gap-3 rounded-card px-4 py-4 text-left',
+                  state === 'caught' ? 'bg-mint' : 'bg-card'
+                )}
+                style={{
+                  // Рамка есть всегда, но видима только у ложного срабатывания (§3: --alert
+                  // работает границей и текстом, не заливкой). Прозрачная рамка в остальных
+                  // состояниях держит размер карточки неизменным при переключении.
+                  border:
+                    state === 'falsePositive'
+                      ? '1.5px solid var(--alert)'
+                      : '1.5px solid transparent',
+                }}
+              >
+                <span className="pt-0.5" aria-hidden="true">
+                  {state === 'idle' && <CursorClick weight="regular" size={18} color="var(--ink-muted)" />}
+                  {state === 'caught' && <Check weight="regular" size={18} color="var(--ink)" />}
+                  {state === 'falsePositive' && <X weight="regular" size={18} color="var(--alert)" />}
+                </span>
+                <span className="grid gap-1">
+                  <span className={cn('t-body text-ink', state === 'caught' && 'line-through')}>
+                    {phrase.text}
                   </span>
-                  <span className="grid gap-1">
+                  {tapped[phrase.id] && (
                     <span
                       className={cn(
-                        't-body',
-                        state === 'caught' ? 'text-ink-muted line-through' : 'text-ink'
+                        't-body-sm',
+                        state === 'falsePositive' ? 'text-alert' : 'text-ink-secondary'
                       )}
                     >
-                      {phrase.text}
+                      {phrase.comment}
                     </span>
-                    {tapped[phrase.id] && (
-                      <span className={cn('t-body-s', state === 'falsePositive' ? 'text-bad' : 'text-ink-muted')}>
-                        {phrase.comment}
-                      </span>
-                    )}
-                  </span>
-                </button>
-              </motion.div>
-            );
-          })}
-        </motion.div>
-      </Well>
+                  )}
+                </span>
+              </button>
+            </motion.div>
+          );
+        })}
+      </motion.div>
 
-      <div className="grid grid-cols-[auto_1fr] items-baseline gap-3">
-        <div className="grid gap-0.5">
-          <span className="t-label text-ink-faint">НАЙДЕНО</span>
-          <div className="flex items-baseline gap-1">
-            <Readout value={found} size="sm" />
-            <span className="t-readout-s text-ink-faint">/ {waterTotal}</span>
-          </div>
-        </div>
+      {/* Счётчик найденного — моно-аннотация, а не «прибор» (§6 моно-лейбл). */}
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <span className="t-caption tnum text-ink">
+          НАЙДЕНО {pad2(found)} / {pad2(waterTotal)}
+        </span>
         {falsePositives > 0 && (
-          // .t-label задаёт цвет ink-faint неслойным правилом (globals.css), которое перебивает
-          // слойные Tailwind-утилиты text-*; поэтому цвет предупреждения — инлайн-стилем.
-          <span className="t-label justify-self-end text-bad">
-            ЛОЖНЫХ СРАБАТЫВАНИЙ: {falsePositives}
-          </span>
+          <span className="t-caption tnum text-alert">ЛОЖНЫХ СРАБАТЫВАНИЙ: {pad2(falsePositives)}</span>
         )}
       </div>
 
       <AnimatePresence>
         {showBreakdown && (
           <motion.div
-            initial={reduced ? { opacity: 0 } : { opacity: 0, y: 10 }}
+            initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: reduced ? 0.12 : 0.26, ease: easeOut }}
           >
             <Panel label={data.breakdown.heading} status="done">
-              <div className="grid gap-4">
+              <div className="grid gap-(--sp-3)">
                 <Quote>{data.breakdown.waterExample.comment}</Quote>
                 <div className="grid gap-2">
-                  <span className="t-label text-ink-faint">ЧЕМ КОНКРЕТИКА ОТЛИЧАЕТСЯ ОТ ВОДЫ</span>
+                  <span className="t-caption">ЧЕМ КОНКРЕТИКА ОТЛИЧАЕТСЯ ОТ ВОДЫ</span>
                   <Bullets items={data.breakdown.diffPoints} />
                 </div>
                 <div className="grid gap-2">
-                  <span className="t-label text-ink-faint">ЧТО ПРОСИТЬ У НЕЙРОНКИ</span>
+                  <span className="t-caption">ЧТО ПРОСИТЬ У НЕЙРОНКИ</span>
                   <Bullets items={data.breakdown.askNeuralNet} />
                 </div>
               </div>

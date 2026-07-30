@@ -5,7 +5,6 @@ import { BottomBar } from '../../ui/BottomBar';
 import { Button } from '../../ui/Button';
 import { Panel } from '../../ui/Panel';
 import { Bullets } from '../../ui/Bullets';
-import { Prose } from '../../ui/Prose';
 import { LeakScanner } from '../../mechanics/LeakScanner';
 import { createLeakScannerData, type LeakSegmentId } from '../../content/mechanics';
 import { RESULTS } from '../../content/results';
@@ -95,22 +94,30 @@ export function ResultScreen() {
 
   return (
     <Screen id="result" phase="know">
+      {/* Единственный инверсный блок этой группы экранов (DESIGN.md §6): персональный вердикт
+          человеку — та самая точка, где чёрный блок должен разорвать светлый ритм.
+          Больше нигде во входной воронке приём не повторяется, иначе он стирается. */}
       <motion.div
-        className="grid gap-3"
-        initial={reduced ? { opacity: 0 } : { opacity: 0, y: 10 }}
+        className="grid gap-4 rounded-card-lg bg-inverted text-ink-inverted"
+        // Полноширинный инверсный блок с радиусом --r-card-lg просит отступа крупнее
+        // карточного: 24px по шкале §5, иначе текст лезет в скругление.
+        style={{ padding: 'var(--sp-3)' }}
+        initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: RESULT_MOTION.verdictDuration, ease: easeOut }}
       >
-        <h1 className="t-display-l text-ink">{result.title}</h1>
-        <Prose>
+        <h1 className="t-display">{result.title}</h1>
+        <div className="grid gap-3">
           {result.body.map((p, i) => (
-            <p key={i}>{p}</p>
+            <p key={i} className="t-body">
+              {p}
+            </p>
           ))}
-        </Prose>
+        </div>
       </motion.div>
 
       <motion.div
-        initial={reduced ? { opacity: 0 } : { opacity: 0, y: 10 }}
+        initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{
           duration: RESULT_MOTION.scanDuration,
@@ -127,19 +134,19 @@ export function ResultScreen() {
         {scanDone && (
           <motion.div
             className="grid gap-4"
-            initial={reduced ? { opacity: 0 } : { opacity: 0, y: 10 }}
+            initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: RESULT_MOTION.diagDuration, ease: easeOut }}
           >
             <div className="grid gap-2">
-              <p className="t-h2 text-ink">
+              <p className="t-subheading text-ink">
                 Ты контролируешь рекламный кабинет. Почти не влияешь на аудиторию, оффер и посадочную.
               </p>
-              <p className="t-body-s text-ink-muted">{specCopy.losing}</p>
+              <p className="t-body-sm text-ink-secondary">{specCopy.losing}</p>
             </div>
             <div className="grid gap-2">
-              <p className="t-label text-ink-faint">ГДЕ ЭТО СТОИТ ТЕБЕ ДЕНЕГ</p>
+              <p className="t-caption">ГДЕ ЭТО СТОИТ ТЕБЕ ДЕНЕГ</p>
               <Bullets items={LOSS_SCENARIOS} />
             </div>
           </motion.div>

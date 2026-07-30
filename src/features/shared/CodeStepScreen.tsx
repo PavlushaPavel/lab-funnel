@@ -5,7 +5,6 @@ import { BottomBar } from '../../ui/BottomBar';
 import { Button } from '../../ui/Button';
 import { Prose } from '../../ui/Prose';
 import { CodeInput } from '../../ui/CodeInput';
-import { ScanLine } from '../../ui/ScanLine';
 import { ModuleBadge } from '../../ui/ModuleBadge';
 import type { ModuleBadgeState } from '../../ui/ModuleBadge';
 import { MODULES } from '../../content/modules';
@@ -33,16 +32,16 @@ const TILE_LABEL: Record<ModuleBadgeState, string> = {
   done: 'Доступ открыт',
 };
 const TILE_LABEL_CLASS: Record<ModuleBadgeState, string> = {
-  locked: 'text-ink-faint',
-  active: 'text-acid',
-  done: 'text-sky',
+  locked: 'text-ink-muted',
+  active: 'text-ink-secondary',
+  done: 'text-ink',
 };
 
 /**
  * Общий экран ввода кода модулей 1/2 + сцена разблокировки (ARCHITECTURE.md §7 CodeInput,
  * PRODUCT.md §3.3/§3.5). CodeInput сам умеет слоты/shake/каскад/haptics — этот экран
  * сравнивает код, ведёт стор и раскручивает открытие доступа к практике модуля:
- * 'locked' → 'active' (код принят, идёт проверка) → 'done' (--sky, доступ открыт).
+ * 'locked' → 'active' (код принят, идёт проверка) → 'done' (--mint, доступ открыт).
  * Верный код открывает ТОЛЬКО доступ к практике (store::unlockCode) — модуль засчитывается
  * пройденным (store::completeModule) позже, экраном практики, только после реальной работы.
  * Переход собран из фаз, а не одной анимацией — карточка модуля сама пульсирует при смене
@@ -62,7 +61,8 @@ export function CodeStepScreen({ stepId, moduleId, phase, copy }: CodeStepScreen
   const [unlocked, setUnlocked] = useState(false);
   const settledRef = useRef(false);
 
-  // Пауза перед раскрытием outcome — даём каскаду слотов и скан-линии доиграть (DESIGN.md §7/§8).
+  // Пауза перед раскрытием outcome — даём каскаду заливки слотов доиграть (DESIGN.md §6, §7).
+  // Длительность берём из общей таблицы lib/motion.ts, локальных чисел анимации здесь нет.
   useEffect(() => {
     if (state !== 'success') return;
     const timer = window.setTimeout(
@@ -94,46 +94,46 @@ export function CodeStepScreen({ stepId, moduleId, phase, copy }: CodeStepScreen
     next();
   };
 
-  // Карточка модуля: заперта, пока код не введён верно; во время проверки — активна (--acid);
-  // доступ открыт — только после того, как каскад слотов и скан-линия доиграли (--sky).
+  // Карточка модуля: заперта, пока код не введён верно; во время проверки — активна;
+  // доступ открыт — только после того, как каскадная заливка слотов доиграла (--mint).
   const tileState: ModuleBadgeState = unlocked ? 'done' : state === 'success' ? 'active' : 'locked';
 
   return (
     <Screen id={stepId} phase={phase}>
-      <h1 className="t-display-l text-ink">{copy.title}</h1>
+      <h1 className="t-display text-ink">{copy.title}</h1>
       <Prose>
         {copy.body?.map((paragraph, i) => (
           <p key={i}>{paragraph}</p>
         ))}
       </Prose>
 
-      <div className="relative">
-        <CodeInput length={codeWord.length} onSubmit={handleSubmit} />
-        <ScanLine trigger={state === 'success'} />
-      </div>
+      <CodeInput length={codeWord.length} onSubmit={handleSubmit} />
 
       {videoPending && (
-        <p className="t-body-s text-ink-muted">
+        <p className="t-body-sm text-ink-secondary">
           Видео пока не подключено, взять слово неоткуда — на время сборки оно такое:{' '}
-          <span className="t-readout-s text-acid">{codeWord}</span>
+          {/* Подсветка слова — единственное назначение --voltage (DESIGN.md §3). */}
+          <span className="bg-voltage rounded-button px-1.5 font-mono text-ink tabular-nums">
+            {codeWord}
+          </span>
         </p>
       )}
 
-      {copy.caption && <p className="t-body-s text-center text-ink-faint">{copy.caption}</p>}
+      {copy.caption && <p className="t-body-sm text-center text-ink-secondary">{copy.caption}</p>}
 
       <AnimatePresence>
         {state === 'error' && (
           <motion.div
-            initial={reduced ? { opacity: 0 } : { opacity: 0, y: -6 }}
+            initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: reduced ? 0.12 : 0.22, ease: easeOut }}
             className="grid gap-1"
           >
-            <p className="t-h2 text-bad">{copy.errorTitle}</p>
+            <p className="t-subheading text-alert">{copy.errorTitle}</p>
             <Prose>
               {copy.errorBody?.map((paragraph, i) => (
-                <p key={i} className="text-ink-muted">
+                <p key={i} className="text-ink-secondary">
                   {paragraph}
                 </p>
               ))}
@@ -146,7 +146,7 @@ export function CodeStepScreen({ stepId, moduleId, phase, copy }: CodeStepScreen
           доступ открыт, и только тогда открывается outcome и кнопка «Дальше». */}
       <div className="grid justify-items-center gap-3 py-2">
         <ModuleBadge code={module.code} title={module.title} state={tileState} size="lg" />
-        <span className={`t-label ${TILE_LABEL_CLASS[tileState]}`}>{TILE_LABEL[tileState]}</span>
+        <span className={`t-caption ${TILE_LABEL_CLASS[tileState]}`}>{TILE_LABEL[tileState]}</span>
 
         {/* Пока карточка «активна» (идёт проверка) — держим successTitle из копирайта; как
             только доступ открыт — сменяем на outcome модуля. Два разных бита, а не один текст. */}

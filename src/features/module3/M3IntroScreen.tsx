@@ -30,7 +30,7 @@ export function M3IntroScreen() {
     <Screen id="m3-intro" phase="believe">
       <div className="grid gap-6 pt-2">
         <div className="grid gap-3">
-          <h1 className="t-display-l text-ink">{copy.title}</h1>
+          <h1 className="t-display text-ink">{copy.title}</h1>
           <Prose>
             {copy.body?.map((p, i) => (
               <p key={i}>{p}</p>
@@ -40,12 +40,12 @@ export function M3IntroScreen() {
 
         <motion.div
           className="grid justify-items-center gap-3 py-4"
-          initial={reduced ? { opacity: 0 } : { opacity: 0, y: 10 }}
+          initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: reduced ? 0.12 : 0.3, ease: easeOut }}
         >
           <ModuleBadge code={module3.code} title={module3.title} state="locked" size="lg" />
-          <p className="t-label text-ink-faint">ЗАПЕРТО · ОТКРОЕТСЯ КОДОМ</p>
+          <p className="t-caption">ЗАПЕРТО · ОТКРОЕТСЯ КОДОМ</p>
         </motion.div>
       </div>
 

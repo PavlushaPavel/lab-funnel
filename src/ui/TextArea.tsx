@@ -10,12 +10,18 @@ interface TextAreaProps {
 }
 
 /**
- * Свободный ввод результата практики (ARCHITECTURE.md §7). Не декорация — единственное
- * место, где приложение получает доказательство, что человек реально что-то сделал
- * (PRODUCT.md §3.4). Валидация длины — забота экрана-владельца (disabled на кнопке
- * «Дальше»), сам примитив только собирает текст.
+ * Поле ввода практики (DESIGN.md v3 §6 TextArea): фон --mist, --r-input, без рамки,
+ * фокус через outline 2px --ink, минимум 96px высоты.
+ * Валидация длины — забота экрана-владельца, примитив только собирает текст.
  */
-export function TextArea({ value, onChange, placeholder, minLength, rows = 5, className }: TextAreaProps) {
+export function TextArea({
+  value,
+  onChange,
+  placeholder,
+  minLength,
+  rows = 5,
+  className,
+}: TextAreaProps) {
   return (
     <textarea
       value={value}
@@ -24,10 +30,10 @@ export function TextArea({ value, onChange, placeholder, minLength, rows = 5, cl
       minLength={minLength}
       rows={rows}
       className={cn(
-        'w-full resize-none rounded-lg border-t border-line bg-sunken px-4 py-3 t-body text-ink placeholder:text-ink-faint',
+        't-body min-h-24 w-full resize-none rounded-input border-none bg-mist px-4 py-3 text-ink placeholder:text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink',
         className
       )}
-      style={{ boxShadow: 'var(--shadow-well-inset)' }}
+      style={{ maxWidth: '100%' }}
     />
   );
 }

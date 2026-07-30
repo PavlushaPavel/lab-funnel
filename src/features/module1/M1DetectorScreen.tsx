@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Screen } from '../../ui/Screen';
 import { BottomBar } from '../../ui/BottomBar';
 import { Button } from '../../ui/Button';
-import { NodeLabel } from '../../ui/NodeLabel';
 import { BullshitDetector } from '../../mechanics';
 import { getBullshitDetectorData } from '../../content/mechanics';
 import { MODULES } from '../../content/modules';
@@ -40,9 +39,13 @@ export function M1DetectorScreen() {
 
   return (
     <Screen id="m1-detector" phase="want">
-      <NodeLabel code={MODULE.code} title={MODULE.title} status="active" />
+      {/* Моно-лейбл как техническая аннотация страницы (DESIGN.md §6): статус-точек
+          приборного мира v2 здесь нет. */}
+      <p className="t-caption">
+        {MODULE.code} · {MODULE.title}
+      </p>
 
-      <h1 className="t-display-l text-ink">Найди херню</h1>
+      <h1 className="t-display text-ink">Найди херню</h1>
 
       <BullshitDetector data={data} spec={spec} onComplete={handleComplete} />
 

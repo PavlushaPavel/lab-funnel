@@ -3,6 +3,7 @@ import { Screen } from '../../ui/Screen';
 import { BottomBar } from '../../ui/BottomBar';
 import { Button } from '../../ui/Button';
 import { Panel } from '../../ui/Panel';
+import { Chip } from '../../ui/Chip';
 import { Bullets } from '../../ui/Bullets';
 import { SCREENS } from '../../content/screens';
 import { MODULES } from '../../content/modules';
@@ -31,7 +32,7 @@ export function Bridge1Screen() {
 
   return (
     <Screen id="bridge-1" phase="want">
-      <p className="t-label text-ink-faint">ПЕРЕХОД · М-01 → М-02</p>
+      <p className="t-caption">ПЕРЕХОД · М-01 → М-02</p>
 
       <motion.div
         className="grid gap-3"
@@ -39,7 +40,7 @@ export function Bridge1Screen() {
         initial={reduced ? undefined : 'hidden'}
         animate={reduced ? undefined : 'show'}
       >
-        <motion.h1 className="t-display-l text-ink" variants={reduced ? undefined : listItem}>
+        <motion.h1 className="t-display text-ink" variants={reduced ? undefined : listItem}>
           {copy.title}
         </motion.h1>
         {bodyHead.map((paragraph, i) => (
@@ -60,14 +61,15 @@ export function Bridge1Screen() {
       </motion.div>
 
       <Panel label={`ПОСЛЕ ${MODULES.m1.code}`} status="done">
-        <div className="grid gap-3">
-          <div className="grid gap-1">
-            <span className="t-label text-acid">ТЕПЕРЬ УМЕЕШЬ</span>
+        <div className="grid gap-4">
+          <div className="grid justify-items-start gap-2">
+            {/* «Сделано» в v3 — мята и только мелким элементом: тег, а не заливка блока (§2.4, §3). */}
+            <Chip>ТЕПЕРЬ УМЕЕШЬ</Chip>
             <p className="t-body text-ink">{MODULES.m1.outcome}</p>
           </div>
-          <div className="grid gap-1">
-            <span className="t-label text-ink-faint">ПОКА НЕ УМЕЕШЬ</span>
-            <p className="t-body-s text-ink-muted">
+          <div className="grid gap-2">
+            <span className="t-caption">ПОКА НЕ УМЕЕШЬ</span>
+            <p className="t-body-sm text-ink-secondary">
               Писать сами объявления и офферы под то, что теперь понимаешь про аудиторию.
             </p>
           </div>

@@ -5,7 +5,6 @@ import { BottomBar } from '../../ui/BottomBar';
 import { Button } from '../../ui/Button';
 import { Prose } from '../../ui/Prose';
 import { VideoBlock } from '../../ui/VideoBlock';
-import { Divider } from '../../ui/Divider';
 import { ModuleBadge } from '../../ui/ModuleBadge';
 import { SCREENS } from '../../content/screens';
 import { MODULES } from '../../content/modules';
@@ -45,8 +44,8 @@ const PROGRESS_CHECKPOINTS = [0.5];
 /**
  * Финальное видео-переход (`final-video`) — мост из фазы ВЕРЮ в фазу ПЛАЧУ. Смысл ролика
  * (PRODUCT.md §4-БИС «путь ты видел, но техническая часть — отдельный кусок») несётся не
- * пересказом, а визуальным контрастом: три ПРОЙДЕННЫХ модуля (ModuleBadge 'done', --sky)
- * против списка НЕ ЗАКРЫТЫХ технических пунктов с незакрашенными маркерами --ink-faint.
+ * пересказом, а визуальным контрастом: три ПРОЙДЕННЫХ модуля (ModuleBadge 'done', --mint)
+ * против списка НЕ ЗАКРЫТЫХ технических пунктов с пустыми маркерами --ink-muted.
  * Описание ролика (video.description) нигде не выводится.
  */
 export function FinalVideoScreen() {
@@ -83,7 +82,7 @@ export function FinalVideoScreen() {
     <Screen id="final-video" phase="believe">
       <div className="grid gap-6 pt-2">
         <div className="grid gap-3">
-          <h1 className="t-display-l text-ink">{copy.title}</h1>
+          <h1 className="t-display text-ink">{copy.title}</h1>
           <Prose>
             {copy.body?.map((p, i) => (
               <p key={i}>{p}</p>
@@ -93,25 +92,32 @@ export function FinalVideoScreen() {
 
         <VideoBlock id={VIDEO_ID} onProgress={handleProgress} />
 
-        <Divider />
-
-        <div className="grid gap-4">
-          <div className="grid gap-2">
-            <p className="t-label text-ink-faint">ПРОЙДЕНО</p>
-            <div className="flex flex-wrap gap-3">
-              {MODULE_LIST.map((m) => (
-                <ModuleBadge key={m.id} code={m.code} title={m.title} state="done" size="sm" />
-              ))}
-            </div>
+        {/* Контраст пройденного и незакрытого держится на поверхностях и цвете отметки:
+            пройденное — мятные отметки прямо на холсте, незакрытое — отдельная белая
+            карточка со служебным серым списком (DESIGN.md §3, §6). */}
+        <div className="grid gap-2">
+          <p className="t-caption">ПРОЙДЕНО</p>
+          <div className="flex flex-wrap gap-2">
+            {MODULE_LIST.map((m) => (
+              <ModuleBadge key={m.id} code={m.code} title={m.title} state="done" size="sm" />
+            ))}
           </div>
+        </div>
 
-          <div className="grid gap-2">
-            <p className="t-label text-ink-faint">НЕ ЗАКРЫТО</p>
+        <div className="bg-card rounded-card-lg p-(--card-pad)">
+          <div className="grid gap-3">
+            <p className="t-caption">НЕ ЗАКРЫТО</p>
             <ul className="grid gap-2">
               {UNRESOLVED.map((item, i) => (
                 <li key={i} className="grid grid-cols-[16px_1fr] items-start gap-2">
-                  <Circle weight="regular" size={10} color="var(--ink-faint)" aria-hidden="true" />
-                  <span className="t-body-s text-ink-faint">{item}</span>
+                  <Circle
+                    weight="regular"
+                    size={10}
+                    color="var(--ink-muted)"
+                    className="mt-1.5"
+                    aria-hidden="true"
+                  />
+                  <span className="t-body-sm text-ink-muted">{item}</span>
                 </li>
               ))}
             </ul>

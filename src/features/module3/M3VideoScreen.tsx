@@ -73,9 +73,11 @@ export function M3VideoScreen() {
 
   return (
     <Screen id="m3-video" phase="believe">
-      <div className="grid grid-cols-[1fr_auto] items-start gap-4">
-        <h1 className="t-display-l text-ink">{video.title}</h1>
+      {/* Заголовок держит всю ширину — он должен ломаться на 3–4 плотные строки (DESIGN.md §4),
+          поэтому карточка модуля стоит над ним, а не в соседней колонке. */}
+      <div className="grid justify-items-start gap-3">
         <ModuleBadge code={module3.code} title={module3.title} state="locked" size="sm" />
+        <h1 className="t-display text-ink">{video.title}</h1>
       </div>
 
       <VideoBlock id={VIDEO_ID} onProgress={handleProgress} />
@@ -84,8 +86,8 @@ export function M3VideoScreen() {
 
       <Panel label="ДАЛЬШЕ" status="locked">
         <div className="grid grid-cols-[auto_1fr] items-center gap-3">
-          <Lock weight="regular" size={20} color="var(--ink-faint)" aria-hidden="true" />
-          <p className="t-body-s text-ink-muted">
+          <Lock weight="regular" size={20} color="var(--ink-muted)" aria-hidden="true" />
+          <p className="t-body-sm text-ink-secondary">
             После видео понадобится ключевое слово — оно прозвучит в ролике. Без него узел{' '}
             {module3.code} не откроется.
           </p>

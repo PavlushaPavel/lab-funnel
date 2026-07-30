@@ -1,23 +1,19 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { NodeLabel } from './NodeLabel';
 import { TickRail } from './TickRail';
 import { easeOut, useReducedMotionSafe } from '../lib/motion';
 
 /**
  * Локальный тайминг показа фолбэка — не пружина/базовая длительность (lib/motion.ts),
- * а порог "чанк реально не успел" (ARCHITECTURE.md §11.3, тот же приём, что BOOT в IntroScreen).
- * Пока чанк грузится быстрее этого порога (обычный случай — App.tsx префетчит следующий шаг
- * в простое заранее), пользователь фолбэк вообще не видит.
+ * а порог «чанк реально не успел». Пока чанк грузится быстрее этого порога (обычный
+ * случай — App.tsx префетчит следующий шаг заранее), пользователь фолбэк не видит.
  */
 const FALLBACK_SHOW_DELAY_S = 0.18;
 
 /**
- * Suspense-фолбэк между экранами воронки (DESIGN.md §3, §6). Каркас — тот же, что у Screen
- * (min-h-dvh, --app-max, --gutter), поэтому раскладка не прыгает при замене на настоящий экран.
- * Появляется с задержкой, а не мгновенно: при удачном префетче (App.tsx) его не видно вовсе.
- * Язык — маркировка узла со статусом «загрузка» (пульсирующая --rust точка, DESIGN.md §6.2)
- * и калибровочная шкала — те же фирменные элементы, что и на «бутовом» экране intro.
+ * Suspense-фолбэк между экранами (DESIGN.md v3 §4, §7). Каркас тот же, что у Screen
+ * (min-h-[100dvh], --app-max, --gutter), поэтому раскладка не прыгает при замене на экран.
+ * Язык — моно-лейбл и плоская линия прогресса, ничего приборного.
  */
 export function StepFallback() {
   const [visible, setVisible] = useState(false);
@@ -29,16 +25,16 @@ export function StepFallback() {
   }, []);
 
   return (
-    <div className="mx-auto grid min-h-dvh max-w-(--app-max) auto-rows-min content-center gap-4 px-(--gutter) py-6">
+    <div className="mx-auto grid min-h-[100dvh] max-w-(--app-max) auto-rows-min content-center gap-(--sp-2) bg-canvas px-(--gutter)">
       {visible && (
         <motion.div
-          className="grid gap-3"
-          initial={reduced ? { opacity: 0 } : { opacity: 0, y: 6 }}
+          className="grid max-w-[40ch] gap-(--sp-2)"
+          initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={reduced ? { duration: 0.12 } : { duration: 0.2, ease: easeOut }}
+          transition={reduced ? { duration: 0.12 } : { duration: 0.26, ease: easeOut }}
         >
-          <NodeLabel code="ЛАБОРАТОРИЯ" title="ЗАГРУЗКА" status="scanning" />
-          <TickRail progress={0.4} height={16} />
+          <span className="t-caption">ЗАГРУЗКА</span>
+          <TickRail progress={0.4} />
         </motion.div>
       )}
     </div>

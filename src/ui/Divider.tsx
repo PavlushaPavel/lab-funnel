@@ -1,10 +1,4 @@
-import { TickRail } from './TickRail';
-
-/** Разделитель секций — калибровочная шкала без заливки, уходит в край экрана (DESIGN.md §5, §6.1). */
+/** Разделитель секций: линия --hairline, без градиентов (DESIGN.md v3 §2.2, §3). */
 export function Divider() {
-  return (
-    <div role="separator" aria-hidden="true" className="w-full">
-      <TickRail progress={0} height={10} />
-    </div>
-  );
+  return <hr role="separator" aria-hidden="true" className="h-px w-full border-none bg-hairline" />;
 }

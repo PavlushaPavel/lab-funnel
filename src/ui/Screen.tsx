@@ -10,7 +10,11 @@ interface ScreenProps {
   children: ReactNode;
 }
 
-/** Обёртка экрана: gutters, вход/выход (DESIGN.md §8). Родитель обязан key={id} внутри AnimatePresence. */
+/**
+ * Обёртка экрана (DESIGN.md v3 §5, §7): фон --canvas, боковые поля --gutter 16px,
+ * safe-area снизу, вход/выход только opacity + y 8px.
+ * Родитель обязан ставить key={id} внутри AnimatePresence.
+ */
 export function Screen({ id, label, phase, children }: ScreenProps) {
   const reduced = useReducedMotionSafe();
 
@@ -23,9 +27,10 @@ export function Screen({ id, label, phase, children }: ScreenProps) {
       animate={reduced ? { opacity: 1 } : 'center'}
       exit={reduced ? { opacity: 0 } : 'exit'}
       transition={reduced ? { duration: 0.12 } : undefined}
-      className="mx-auto grid min-h-dvh max-w-(--app-max) auto-rows-min gap-6 px-(--gutter) py-6"
+      className="mx-auto grid min-h-[100dvh] max-w-(--app-max) auto-rows-min gap-6 bg-canvas px-(--gutter) pt-6"
+      style={{ paddingBottom: 'max(var(--sp-3), env(safe-area-inset-bottom))' }}
     >
-      {label && <p className="t-label text-ink-faint">{label}</p>}
+      {label && <p className="t-caption">{label}</p>}
       {children}
     </motion.div>
   );

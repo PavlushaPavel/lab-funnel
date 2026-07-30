@@ -38,7 +38,7 @@ export function Bridge2Screen() {
 
   return (
     <Screen id="bridge-2" phase="want">
-      <p className="t-label text-ink-faint">ПЕРЕХОД · М-02 → М-03</p>
+      <p className="t-caption">ПЕРЕХОД · М-02 → М-03</p>
 
       <motion.div
         className="grid gap-3"
@@ -46,7 +46,7 @@ export function Bridge2Screen() {
         initial={reduced ? undefined : 'hidden'}
         animate={reduced ? undefined : 'show'}
       >
-        <motion.h1 className="t-display-l text-ink" variants={reduced ? undefined : listItem}>
+        <motion.h1 className="t-display text-ink" variants={reduced ? undefined : listItem}>
           {copy.title}
         </motion.h1>
 
@@ -88,12 +88,12 @@ export function Bridge2Screen() {
       <Panel label={`ПОСЛЕ ${MODULES.m2.code}`} status="done">
         <div className="grid gap-3">
           <div className="grid gap-1">
-            <span className="t-label text-acid">ТЕПЕРЬ УМЕЕШЬ</span>
+            <span className="t-caption text-ink">ТЕПЕРЬ УМЕЕШЬ</span>
             <p className="t-body text-ink">{MODULES.m2.outcome}</p>
           </div>
           <div className="grid gap-1">
-            <span className="t-label text-ink-faint">ПОКА НЕ УМЕЕШЬ</span>
-            <p className="t-body-s text-ink-muted">
+            <span className="t-caption">ПОКА НЕ УМЕЕШЬ</span>
+            <p className="t-body-sm text-ink-secondary">
               Показать это на посадочной странице — сайт клиента к этому пока не готов.
             </p>
           </div>

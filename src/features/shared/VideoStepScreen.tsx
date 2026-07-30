@@ -88,9 +88,11 @@ export function VideoStepScreen({ stepId, videoId, moduleId, phase }: VideoStepS
 
   return (
     <Screen id={stepId} phase={phase}>
-      <div className="grid grid-cols-[1fr_auto] items-start gap-4">
-        <h1 className="t-display-l text-ink">{video.title}</h1>
+      {/* Дисплейный заголовок держит всю ширину: он должен ломаться на 3–4 плотные строки
+          (DESIGN.md §4), поэтому карточка модуля вынесена над ним, а не в соседнюю колонку. */}
+      <div className="grid justify-items-start gap-3">
         <ModuleBadge code={module.code} title={module.title} state="locked" size="sm" />
+        <h1 className="t-display text-ink">{video.title}</h1>
       </div>
 
       <VideoBlock id={videoId} onProgress={handleProgress} />
@@ -99,8 +101,8 @@ export function VideoStepScreen({ stepId, videoId, moduleId, phase }: VideoStepS
 
       <Panel label="ДАЛЬШЕ" status="locked">
         <div className="grid grid-cols-[auto_1fr] items-center gap-3">
-          <Lock weight="regular" size={20} color="var(--ink-faint)" aria-hidden="true" />
-          <p className="t-body-s text-ink-muted">
+          <Lock weight="regular" size={20} color="var(--ink-muted)" aria-hidden="true" />
+          <p className="t-body-sm text-ink-secondary">
             После видео понадобится ключевое слово — оно прозвучит в ролике. Без него узел{' '}
             {module.code} не откроется.
           </p>

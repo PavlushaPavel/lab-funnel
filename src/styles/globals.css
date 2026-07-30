@@ -1,4 +1,6 @@
-/* globals.css — reset, типографика, мост токенов в Tailwind v4. */
+/* globals.css — reset, типографика, мост токенов в Tailwind v4.
+   Мир v3 (DESIGN.md): светлый брутально-редакционный. Теней, градиентов,
+   зерна и световых пятен в системе нет — они сняты целиком. */
 
 /* source() ограничивает автосканирование Tailwind папкой src — иначе он подхватывает
    классоподобные токены из текста ARCHITECTURE.md/DESIGN.md (например «h-screen» из списка запретов). */
@@ -6,50 +8,53 @@
 @source '../../index.html';
 @import './tokens.css';
 
-/* Шрифты — self-hosted, variable-начертания */
+/* Шрифты — self-hosted, variable-начертания.
+   Oswald выбран как дисплейный именно из-за полной кириллицы: Anton, Bebas Neue и
+   Barlow Condensed кириллицы не имеют (DESIGN.md §4). index.css пакета подключает все
+   сабсеты, включая cyrillic и cyrillic-ext, — русские заголовки набираются. */
+@import '@fontsource-variable/oswald';
 @import '@fontsource-variable/onest';
 @import '@fontsource-variable/jetbrains-mono';
 
 @theme {
   /* Цвета — мост к tokens.css. Имена namespaced Tailwind-ом (--color-*),
      поэтому var()-ссылка на tokens.css не создаёт цикла. */
-  --color-void: var(--bg-void);
-  --color-panel: var(--bg-panel);
-  --color-raised: var(--bg-raised);
-  --color-sunken: var(--bg-sunken);
-  --color-line: var(--line);
-  --color-line-strong: var(--line-strong);
-  --color-line-acid: var(--line-acid);
+  --color-canvas: var(--canvas);
+  --color-card: var(--card);
+  --color-inverted: var(--inverted);
+  --color-mist: var(--mist);
   --color-ink: var(--ink);
+  --color-ink-secondary: var(--ink-secondary);
   --color-ink-muted: var(--ink-muted);
-  --color-ink-faint: var(--ink-faint);
-  --color-ink-invert: var(--ink-invert);
-
-  /* Мир v2 (DESIGN.md §3): кислота — сигнал действия, небо — только достигнутый результат */
-  --color-acid: var(--acid);
-  --color-acid-deep: var(--acid-deep);
-  --color-acid-dim: var(--acid-dim);
-  --color-sky: var(--sky);
-  --color-sky-dim: var(--sky-dim);
-  --color-rust: var(--rust);
-  --color-rust-dim: var(--rust-dim);
-  --color-bad: var(--bad);
-  --color-bad-dim: var(--bad-dim);
-
+  --color-ink-inverted: var(--ink-inverted);
+  --color-hairline: var(--hairline);
+  --color-graphite: var(--graphite);
+  --color-mint: var(--mint);
+  --color-voltage: var(--voltage);
+  --color-alert: var(--alert);
 
   /* Шрифты и радиусы — имя переменной Tailwind (--font-*, --radius-*) совпадает
-     с именем в tokens.css дословно, поэтому здесь литерал, а не var(),
-     иначе получится циклическая CSS-переменная (--font-sans: var(--font-sans)).
-     Радиусы уменьшены (DESIGN.md §5): клетка периодической таблицы почти прямоугольная. */
+     с именем в tokens.css дословно, поэтому здесь литерал либо ссылка на --r-*,
+     иначе получится циклическая CSS-переменная (--font-sans: var(--font-sans)). */
+  --font-display: 'Oswald Variable', 'Oswald', system-ui, sans-serif;
   --font-sans: 'Onest Variable', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
 
-  /* Доп. токен ширины/отступа контента для утилит Tailwind */
-  --spacing-gutter: 20px;
+  --radius-button: var(--r-button);
+  --radius-input: var(--r-input);
+  --radius-card: var(--r-card);
+  --radius-card-lg: var(--r-card-lg);
+  --radius-arc: var(--r-arc);
+  --radius-pill: var(--r-pill);
+
+  /* Доп. токены ширины/отступа контента для утилит Tailwind */
+  --spacing-gutter: 16px;
   --container-app: 480px;
+
+  /* ---- АЛИАСЫ СОВМЕСТИМОСТИ, ПОДЛЕЖАТ УДАЛЕНИЮ ПОСЛЕ ПЕРЕВОДА ЭКРАНОВ ----
+     Классы тёмного мира v2 (bg-panel, text-ink-faint, bg-acid, text-rust, border-line…)
+     ещё стоят в примитивах и экранах. Отображаем их на новую палитру, чтобы сборка
+     оставалась зелёной и интерфейс уже читался светлым. В новом коде не использовать. */
 }
 
 /* ---- Reset ---- */
@@ -62,13 +67,15 @@
 }
 
 html {
-  color-scheme: dark;
+  /* Тема принудительно светлая, тема клиента Telegram игнорируется (DESIGN.md §8). */
+  color-scheme: light;
+  background: var(--canvas);
   -webkit-tap-highlight-color: transparent;
 }
 
 body {
   min-height: 100dvh;
-  background: var(--bg-void);
+  background: var(--canvas);
   color: var(--ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -105,109 +112,96 @@ div {
   overflow-wrap: anywhere;
 }
 
-/* ---- Фокус ---- */
+/* ---- Фокус (DESIGN.md §8) ---- */
 :focus-visible {
-  outline: 2px solid var(--acid);
+  outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
 
 /* ВАЖНО: типографические классы обязаны лежать в слое.
    Неслойный CSS по каскаду перебивает любой слойный, поэтому пока эти правила
-   были вне @layer, `.t-label` со своим color: var(--ink-faint) молча выигрывал
-   у Tailwind-утилит text-* — сочетание «t-label + text-acid» никогда не меняло
-   цвет. Слой components идёт до utilities, что и восстанавливает переопределение. */
+   были вне @layer, `.t-caption` со своим color молча выигрывал у Tailwind-утилит
+   text-* — сочетание «t-caption + text-ink» никогда не меняло цвет.
+   Слой components идёт до utilities, что и восстанавливает переопределение. */
 @layer components {
-  /* ---- Типографическая шкала (DESIGN.md v2 §4) ----
-     Переработана под читаемость: трекинг лейбла снижен с +0.14em до +0.10em
-     (на кириллице широкий трекинг не читался), тело и вторичный текст укрупнены. */
+  /* ---- Типографическая шкала (DESIGN.md v3 §4) ----
+     Дисплей — Oswald 700 заглавными, интерлиньяж 0.90: плотный брутальный блок.
+     Дисплейные кегли через clamp(), чтобы на узких экранах не переполнялись. */
+  .t-display-xl,
+  .t-display,
+  .t-heading-lg {
+    font-family: var(--font-display);
+    font-weight: 700;
+    text-transform: uppercase;
+    max-width: 14ch;
+  }
+
   .t-display-xl {
-    font: 700 2.125rem/1.06 var(--font-sans);
-    letter-spacing: -0.028em;
-    text-wrap: balance;
-    max-width: 26ch;
+    font-size: clamp(44px, 13.5vw, 72px);
+    line-height: 0.9;
+    letter-spacing: -0.03em;
   }
 
-  .t-display-l {
-    font: 700 1.75rem/1.1 var(--font-sans);
-    letter-spacing: -0.022em;
-    text-wrap: balance;
-    max-width: 26ch;
+  .t-display {
+    font-size: clamp(34px, 10.5vw, 56px);
+    line-height: 0.9;
+    letter-spacing: -0.03em;
   }
 
-  .t-h1 {
-    font: 600 1.375rem/1.22 var(--font-sans);
-    letter-spacing: -0.018em;
-    text-wrap: balance;
-    max-width: 26ch;
+  .t-heading-lg {
+    font-size: 28px;
+    line-height: 0.92;
+    letter-spacing: -0.02em;
   }
 
-  .t-h2 {
-    font: 600 1.125rem/1.32 var(--font-sans);
-    letter-spacing: -0.012em;
+  /* §4: на кеглях 28–34px трекинг Oswald ослабляем — в кириллице при -0.03em буквы липнут. */
+  @media (max-width: 380px) {
+    .t-display {
+      letter-spacing: -0.02em;
+    }
+  }
+
+  .t-heading {
+    font: 500 22px/1.1 var(--font-sans);
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
     text-wrap: balance;
-    max-width: 26ch;
+  }
+
+  .t-subheading {
+    font: 500 18px/1.33 var(--font-sans);
+    letter-spacing: -0.011em;
+    text-wrap: balance;
   }
 
   .t-body {
-    font: 400 1.0625rem/1.62 var(--font-sans);
-    letter-spacing: -0.003em;
-    max-width: 42ch;
+    font: 400 16px/1.45 var(--font-sans);
+    letter-spacing: -0.01em;
+    max-width: 40ch;
   }
 
-  .t-body-s {
-    font: 400 0.9375rem/1.55 var(--font-sans);
-    letter-spacing: 0;
+  .t-body-sm {
+    font: 400 14px/1.35 var(--font-sans);
+    letter-spacing: -0.011em;
   }
 
-  .t-label {
-    font: 500 0.75rem/1.25 var(--font-mono);
-    letter-spacing: 0.1em;
+  .t-caption {
+    font: 400 12px/1.5 var(--font-mono);
+    letter-spacing: -0.03em;
     text-transform: uppercase;
-    color: var(--ink-faint);
+    color: var(--ink-muted);
   }
 
-  .t-readout {
-    font: 600 2.5rem/1 var(--font-mono);
-    letter-spacing: -0.02em;
-    font-variant-numeric: tabular-nums;
-  }
+  /* ---- АЛИАСЫ СОВМЕСТИМОСТИ, ПОДЛЕЖАТ УДАЛЕНИЮ ПОСЛЕ ПЕРЕВОДА ЭКРАНОВ ----
+     Старые имена классов шкалы v2 сопоставлены новой шкале v3. */
 
-  .t-readout-s {
-    font: 500 0.9375rem/1.3 var(--font-mono);
-    letter-spacing: 0.02em;
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* Токен шкалы DESIGN.md §4. Не используется интерфейсом с момента сноса ElementTile
-     (снос химического слоя, аудит продукта) — оставлен в шкале как токен, не как разметка. */
-  .t-symbol {
-    font: 700 1.875rem/1 var(--font-mono);
-    letter-spacing: -0.02em;
-  }
-
-  /* Любые моно-числа — фиксированная ширина цифр, не прыгают при анимации */
+  /* Любые моно-числа — фиксированная ширина цифр, не прыгают при анимации (§4: все числа tabular). */
   .tnum {
     font-variant-numeric: tabular-nums;
   }
 }
 
-/* ---- Фирменные элементы (DESIGN.md §6) ---- */
-
-/* Калибровочная шкала: риски 1px, шаг 6px, каждая 5-я (30px) — на всю высоту. */
-.tick-rail-fill {
-  position: absolute;
-  inset: 0;
-  background-image:
-    repeating-linear-gradient(90deg, var(--tick-color) 0 1px, transparent 1px 6px),
-    repeating-linear-gradient(90deg, var(--tick-color) 0 1px, transparent 1px 30px);
-  background-size:
-    100% 50%,
-    100% 100%;
-  background-position:
-    bottom,
-    bottom;
-  background-repeat: repeat-x, repeat-x;
-}
+/* ---- Разрешённые анимации (DESIGN.md §7) ---- */
 
 /* Shake: неверный ответ / неверный код (±4px, 220ms). */
 @keyframes lab-shake {
@@ -234,8 +228,7 @@ div {
   animation: lab-shake 220ms;
 }
 
-/* Пульс статуса «сканирование» (Panel/NodeLabel status="scanning") — единственная разрешённая
-   бесконечная анимация помимо курсора. */
+/* Индикатор набора в чате — одна из двух разрешённых бесконечных анимаций (§7). */
 @keyframes lab-pulse-warn {
   0%,
   100% {
@@ -250,7 +243,7 @@ div {
   animation: lab-pulse-warn 1.2s ease-in-out infinite;
 }
 
-/* Курсор в поле кода — вторая разрешённая бесконечная анимация. */
+/* Курсор в поле кода — вторая разрешённая бесконечная анимация (§7). */
 @keyframes lab-cursor-blink {
   0%,
   50% {
@@ -266,14 +259,12 @@ div {
   animation: lab-cursor-blink 1s steps(1) infinite;
 }
 
+/* ---- Reduced motion (§7: остаётся только opacity) ---- */
 @media (prefers-reduced-motion: reduce) {
   .anim-shake {
     animation: none;
   }
-}
 
-/* ---- Reduced motion ---- */
-@media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {

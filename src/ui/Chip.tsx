@@ -7,13 +7,18 @@ interface ChipProps {
   className?: string;
 }
 
-/** Чип-метка (не интерактивна). Активный — заливка --acid-dim. */
-export function Chip({ active, children, className }: ChipProps) {
+/**
+ * Тег (DESIGN.md v3 §6 Тег): заливка --mint, текст --ink, --r-pill, моно caption.
+ * Подписной акцент системы — единственное место, где хроматика вообще появляется.
+ * Спокойный вариант (active=false) уходит на --mist, чтобы мята оставалась отметкой,
+ * а не фоном (§2.4: хроматических заливок больших поверхностей нет).
+ */
+export function Chip({ active = true, children, className }: ChipProps) {
   return (
     <span
       className={cn(
-        't-label inline-flex items-center rounded-sm border px-3 py-1 normal-case',
-        active ? 'border-line-acid bg-acid-dim text-acid' : 'border-line text-ink-muted',
+        't-caption inline-flex items-center rounded-pill px-[14px] py-1.5',
+        active ? 'bg-mint text-ink' : 'bg-mist text-ink-secondary',
         className
       )}
     >

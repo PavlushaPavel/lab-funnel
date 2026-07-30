@@ -19,25 +19,19 @@ interface ButtonProps {
   className?: string;
 }
 
+/**
+ * Кнопка (DESIGN.md v3 §3, §6).
+ * primary  — заливка --inverted, текст --ink-inverted: самый контрастный элемент экрана, одна на экран.
+ * secondary — прозрачная, рамка 1.5px --ink-secondary, текст --ink-secondary.
+ * ghost    — третичная текстовая ссылка: --ink с подчёркиванием.
+ * Нажатие — только opacity 0.85 (§6): мир плоский, «вдавливаний» и смены заливки нет.
+ */
 const VARIANT_CLASS: Record<ButtonVariant, string> = {
-  primary: 'bg-acid text-ink-invert',
-  secondary: 'bg-transparent text-ink border border-line-strong',
-  ghost: 'bg-transparent text-ink',
+  primary: 'bg-inverted text-ink-inverted',
+  secondary: 'bg-transparent text-ink-secondary',
+  ghost: 'bg-transparent text-ink underline underline-offset-4',
 };
 
-const VARIANT_PRESS_BG: Record<ButtonVariant, string> = {
-  primary: 'var(--acid-deep)',
-  secondary: 'var(--bg-raised)',
-  ghost: 'var(--bg-raised)',
-};
-
-const VARIANT_BG: Record<ButtonVariant, string> = {
-  primary: 'var(--acid)',
-  secondary: 'transparent',
-  ghost: 'transparent',
-};
-
-/** Первичная/вторичная/ghost-кнопка. Визуал — DESIGN.md §7 Button. */
 export function Button({
   variant,
   size = 'md',
@@ -60,23 +54,22 @@ export function Button({
       disabled={isDisabled}
       aria-busy={loading || undefined}
       className={cn(
-        'inline-grid grid-flow-col items-center justify-center gap-2 rounded-md px-5',
-        size === 'md' ? 'h-[54px] text-base' : 'h-11 text-sm',
+        'inline-grid grid-flow-col items-center justify-center gap-2 rounded-button px-5',
+        // 52px — кегль первичного действия (§6); sm держит минимальный тап-таргет 44px (§8)
+        size === 'md' ? 'h-[52px] text-base' : 'h-11 text-sm',
         full && 'w-full',
-        !isDisabled && VARIANT_CLASS[variant],
-        isDisabled && 'bg-raised text-ink-faint',
+        // Disabled — заливка --hairline, текст --ink-muted (§6)
+        isDisabled ? 'bg-hairline text-ink-muted' : VARIANT_CLASS[variant],
         className
       )}
       style={{
-        fontWeight: 600,
+        // Onest 500 16px (§6 Кнопка первичная)
+        fontWeight: 500,
         letterSpacing: '-0.01em',
-        backgroundColor: isDisabled ? undefined : VARIANT_BG[variant],
+        border:
+          !isDisabled && variant === 'secondary' ? '1.5px solid var(--ink-secondary)' : undefined,
       }}
-      whileTap={
-        isDisabled || reduced
-          ? undefined
-          : { scale: 0.985, backgroundColor: VARIANT_PRESS_BG[variant] }
-      }
+      whileTap={isDisabled || reduced ? undefined : { opacity: 0.85 }}
       transition={{ duration: durations.press }}
     >
       {icon && <span className="inline-flex h-5 w-5 items-center justify-center">{icon}</span>}

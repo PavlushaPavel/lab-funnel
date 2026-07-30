@@ -11,8 +11,11 @@ interface ReadoutProps {
 }
 
 /**
- * Показание-счётчик. Анимация числа через useMotionValue + animate() (DESIGN.md §7 Readout),
- * НЕ через useState на кадр — текст пишется напрямую в DOM через useMotionValueEvent.
+ * Крупное число (DESIGN.md v3 §4): дисплейный Oswald с табличными цифрами — типографика
+ * здесь и делает всю работу. Мелкий размер идёт моно-шрифтом: сжатый дисплей ниже 28px
+ * не применяется (§2.7).
+ * Анимация числа — через useMotionValue + animate(), текст пишется прямо в DOM,
+ * без ререндера на кадр.
  */
 export function Readout({ value, suffix, size = 'lg', animate: shouldAnimate = true }: ReadoutProps) {
   const mv = useMotionValue(value);
@@ -32,13 +35,35 @@ export function Readout({ value, suffix, size = 'lg', animate: shouldAnimate = t
     if (textRef.current) textRef.current.textContent = formatThousands(latest);
   });
 
+  const isLg = size === 'lg';
+
   return (
-    <span className={size === 'lg' ? 't-readout' : 't-readout-s'}>
+    <span
+      className="tnum inline-flex items-baseline gap-1 text-ink"
+      style={
+        isLg
+          ? {
+              fontFamily: 'var(--font-display)',
+              fontWeight: 700,
+              fontSize: 'clamp(34px, 10.5vw, 56px)',
+              lineHeight: 0.9,
+              letterSpacing: '-0.02em',
+            }
+          : {
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 400,
+              fontSize: 14,
+              lineHeight: 1.35,
+              letterSpacing: '-0.011em',
+            }
+      }
+    >
       <span ref={textRef} className="tnum">
         {formatThousands(value)}
       </span>
       {suffix && (
-        <span className="text-ink-muted" style={{ fontSize: '0.55em' }}>
+        // Мелкий размер не уводит суффикс ниже 12px (§2.14)
+        <span className="text-ink-muted" style={{ fontSize: isLg ? '0.55em' : 12 }}>
           {suffix}
         </span>
       )}

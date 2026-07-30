@@ -24,8 +24,12 @@ const STATUS_LABEL: Record<PlayStatus, string> = {
 };
 
 /**
- * Видеоблок работает от src/content/video.ts. Если src не задан (заглушка) —
- * досмотр симулируется таймером в темпе duration, чтобы логика досмотра была рабочей уже сейчас.
+ * Видеоблок (DESIGN.md v3 §6 VideoBlock): обложка 16:9 с --r-card, кнопка Play — чёрный круг
+ * 56px с белой иконкой, под обложкой моно caption «название · хронометраж» и статус справа,
+ * прогресс — плоская линия. Описаний и расшифровок под плеером нет (§2.13).
+ *
+ * Работает от src/content/video.ts. Пока src не задан (ролики не подключены), досмотр
+ * симулируется за PREVIEW_SECONDS — иначе воронка непроходима.
  */
 export function VideoBlock({ id, onProgress }: VideoBlockProps) {
   const config = getVideo(id);
@@ -87,7 +91,7 @@ export function VideoBlock({ id, onProgress }: VideoBlockProps) {
   return (
     <div className="grid gap-2">
       <div
-        className="relative overflow-hidden rounded-lg bg-raised"
+        className="relative overflow-hidden rounded-card bg-mist"
         style={{ aspectRatio: '16 / 9' }}
       >
         {config.poster && (
@@ -105,7 +109,7 @@ export function VideoBlock({ id, onProgress }: VideoBlockProps) {
           />
         )}
         {isPlaceholder && (
-          <span className="t-label absolute left-3 top-3 rounded-sm border border-line bg-void/80 px-2 py-1 text-ink-muted">
+          <span className="t-caption absolute left-3 top-3 rounded-button bg-card px-2 py-1">
             ВИДЕО ЕЩЁ НЕ ПОДКЛЮЧЕНО
           </span>
         )}
@@ -116,23 +120,21 @@ export function VideoBlock({ id, onProgress }: VideoBlockProps) {
             aria-label="Смотреть видео"
             className="absolute inset-0 grid place-items-center"
           >
-            <span className="grid h-14 w-14 place-items-center rounded-full bg-acid">
-              <Play weight="regular" size={24} color="var(--ink-invert)" aria-hidden="true" />
+            <span className="grid h-14 w-14 place-items-center rounded-pill bg-inverted">
+              <Play weight="regular" size={24} color="var(--ink-inverted)" aria-hidden="true" />
             </span>
           </button>
         )}
       </div>
-      <div className="grid grid-cols-[1fr_auto] items-center">
-        <span className="t-readout-s text-ink-muted">
+      <div className="grid grid-cols-[1fr_auto] items-center gap-2">
+        <span className="t-caption tnum">
           {config.title} · {formatDuration(config.duration)}
         </span>
-        <span
-          className={cn('t-label', status === 'idle' ? 'text-ink-faint' : 'text-acid')}
-        >
+        <span className={cn('t-caption', status === 'idle' ? undefined : 'text-ink')}>
           {STATUS_LABEL[status]}
         </span>
       </div>
-      <TickRail progress={progress} height={10} />
+      <TickRail progress={progress} />
     </div>
   );
 }

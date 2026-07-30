@@ -6,14 +6,14 @@ import { BottomBar } from '../../ui/BottomBar';
 import { Button } from '../../ui/Button';
 import { ChoiceList } from '../../ui/ChoiceList';
 import { TextArea } from '../../ui/TextArea';
-import { NodeLabel } from '../../ui/NodeLabel';
+import { Panel } from '../../ui/Panel';
 import { SCREENS } from '../../content/screens';
 import { PRACTICE } from '../../content/practice';
 import { MODULES } from '../../content/modules';
 import { useFunnelStore } from '../../store/funnel';
 import { track } from '../../lib/analytics';
 import { haptics, openLink } from '../../lib/telegram';
-import { easeOut, useReducedMotionSafe } from '../../lib/motion';
+import { easeOut, springPanel, useReducedMotionSafe } from '../../lib/motion';
 
 const copy = SCREENS['m1-practice'];
 const practice = PRACTICE['m1-practice'];
@@ -72,11 +72,13 @@ export function M1PracticeScreen() {
 
   return (
     <Screen id="m1-practice" phase="want">
-      <NodeLabel code={MODULE.code} title={MODULE.title} status="active" />
-      <h1 className="t-display-l text-ink">{copy.title}</h1>
+      <p className="t-caption">
+        {MODULE.code} · {MODULE.title}
+      </p>
+      <h1 className="t-display text-ink">{copy.title}</h1>
 
       <div className="grid gap-3">
-        <span className="t-label text-ink-faint">КАКОЙ ПРОЕКТ БЕРЁМ</span>
+        <span className="t-caption">КАКОЙ ПРОЕКТ БЕРЁМ</span>
         <ChoiceList
           options={practice.sourceOptions}
           value={sourceId}
@@ -98,28 +100,32 @@ export function M1PracticeScreen() {
           Открыть ассистента
         </Button>
         {!ASSISTANT_URL && (
-          <p className="t-body-s text-ink-muted">Ссылка на ассистента ещё не подключена.</p>
+          <p className="t-body-sm text-ink-secondary">Ссылка на ассистента ещё не подключена.</p>
         )}
       </div>
 
-      <div className="grid gap-3">
-        <p className="t-body text-ink">{practice.inputPrompt}</p>
-        <TextArea
-          value={inputValue}
-          onChange={(v) => setPracticeInput(practice.id, v)}
-          placeholder={practice.inputPlaceholder}
-          minLength={MIN_INPUT_LENGTH}
-        />
-      </div>
+      {/* Реальный ввод результата — на белой карточке: глубина идёт контрастом
+          поверхностей холст → карточка, без рамок и теней (DESIGN.md §1, §6). */}
+      <Panel>
+        <div className="grid gap-3">
+          <p className="t-body text-ink">{practice.inputPrompt}</p>
+          <TextArea
+            value={inputValue}
+            onChange={(v) => setPracticeInput(practice.id, v)}
+            placeholder={practice.inputPlaceholder}
+            minLength={MIN_INPUT_LENGTH}
+          />
+        </div>
+      </Panel>
 
       <AnimatePresence>
         {isInputValid && (
           <motion.div
             className="grid gap-3"
-            initial={reduced ? { opacity: 0 } : { opacity: 0, y: 10 }}
+            initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: reduced ? 0.12 : 0.26, ease: easeOut }}
+            transition={reduced ? { duration: 0.12, ease: easeOut } : springPanel}
           >
             <p className="t-body text-ink">{practice.checkQuestion}</p>
             <ChoiceList options={practice.checkOptions} value={practiceAnswer ?? null} onChange={handleAnswer} />

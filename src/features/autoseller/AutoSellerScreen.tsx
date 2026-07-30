@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
+import { motion } from 'motion/react';
 import { ArrowSquareOut } from '@phosphor-icons/react';
 import { Screen } from '../../ui/Screen';
 import { BottomBar } from '../../ui/BottomBar';
 import { Button } from '../../ui/Button';
-import { Panel } from '../../ui/Panel';
 import { Chip } from '../../ui/Chip';
 import { Bullets } from '../../ui/Bullets';
 import {
@@ -18,7 +19,7 @@ import { useFunnelStore } from '../../store/funnel';
 import { track } from '../../lib/analytics';
 import { haptics, openLink } from '../../lib/telegram';
 import { cn } from '../../lib/cn';
-import { useReducedMotionSafe } from '../../lib/motion';
+import { listItem, useReducedMotionSafe } from '../../lib/motion';
 
 /**
  * Темп чата — не CSS-анимация и не пружина (те по-прежнему только из lib/motion.ts), а
@@ -50,13 +51,38 @@ function wait(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-/** Реплика автопродавца слева, в панели (DESIGN.md §7 Panel). */
+/**
+ * Появление элемента ленты (DESIGN.md §7): только opacity + короткий y 8px, длительность и
+ * easing — из lib/motion.ts. Анимация играет один раз, на монтировании: ключи элементов ленты
+ * стабильны, поэтому старые сообщения не переигрываются при добавлении нового.
+ */
+function ChatRow({
+  children,
+  className,
+  reduced,
+}: {
+  children: ReactNode;
+  className?: string;
+  reduced: boolean;
+}) {
+  return (
+    <motion.div
+      className={className}
+      variants={reduced ? undefined : listItem}
+      initial={reduced ? { opacity: 0 } : 'hidden'}
+      animate={reduced ? { opacity: 1 } : 'show'}
+      transition={reduced ? { duration: 0.12 } : undefined}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/** Реплика автопродавца слева — белая карточка на холсте (DESIGN.md §6 Карточка). */
 function BotBubble({ text }: { text: string }) {
   return (
-    <div className="mr-auto max-w-[85%]">
-      <Panel>
-        <p className="t-body-s text-ink">{text}</p>
-      </Panel>
+    <div className="bg-card rounded-card mr-auto max-w-[85%] p-(--sp-2)">
+      <p className="t-body text-ink">{text}</p>
     </div>
   );
 }
@@ -64,19 +90,17 @@ function BotBubble({ text }: { text: string }) {
 /** Индикатор набора: три точки, единственная разрешённая доп. зацикленная анимация (ТЗ волны). */
 function TypingDots() {
   return (
-    <div className="mr-auto max-w-[40%]">
-      <Panel>
-        <div className="flex items-center gap-1" role="status" aria-label="Автопродавец печатает">
-          {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              className="anim-pulse-warn h-1.5 w-1.5 rounded-full"
-              style={{ background: 'var(--ink-muted)', animationDelay: `${i * 0.15}s` }}
-              aria-hidden="true"
-            />
-          ))}
-        </div>
-      </Panel>
+    <div className="bg-card rounded-card mr-auto p-(--sp-2)">
+      <div className="flex items-center gap-1" role="status" aria-label="Автопродавец печатает">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="anim-pulse-warn h-1.5 w-1.5 rounded-full"
+            style={{ background: 'var(--ink-muted)', animationDelay: `${i * 0.15}s` }}
+            aria-hidden="true"
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -91,18 +115,18 @@ function ExamplesBlock({ onOpen }: { onOpen: (url: string) => void }) {
           disabled={!ex.url}
           onClick={() => ex.url && onOpen(ex.url)}
           className={cn(
-            'grid min-h-11 items-center gap-1 rounded-md border px-3 py-2 text-left',
-            ex.url ? 'border-line bg-panel text-ink' : 'border-line bg-raised text-ink-faint'
+            'rounded-card grid min-h-11 items-center gap-1 p-(--sp-2) text-left',
+            ex.url ? 'bg-card text-ink' : 'bg-mist text-ink-muted'
           )}
         >
-          <span className="t-body-s">{ex.label}</span>
+          <span className="t-body-sm">{ex.label}</span>
           {ex.url ? (
-            <span className="t-label inline-flex items-center gap-1 text-ink-faint">
+            <span className="t-caption inline-flex items-center gap-1">
               ОТКРЫТЬ
               <ArrowSquareOut weight="regular" size={12} aria-hidden="true" />
             </span>
           ) : (
-            <span className="t-label text-ink-faint">TODO: ССЫЛКА СКОРО</span>
+            <span className="t-caption">TODO: ССЫЛКА СКОРО</span>
           )}
         </button>
       ))}
@@ -129,8 +153,9 @@ function OptionsBlock({
             disabled={isAnswered}
             onClick={() => onPick(item, option)}
             className={cn(
-              't-body-s min-h-11 rounded-md border px-4 py-2 text-left',
-              isChosen ? 'border-line-acid bg-acid-dim text-acid' : 'border-line bg-panel text-ink',
+              't-body-sm rounded-card grid min-h-11 items-center px-4 py-3 text-left',
+              // Отмеченный выбор — мята, остальное белая карточка (DESIGN.md §6 Вариант ответа).
+              isChosen ? 'bg-mint text-ink' : 'bg-card text-ink',
               isAnswered && !isChosen && 'opacity-40'
             )}
           >
@@ -276,40 +301,53 @@ export function AutoSellerScreen() {
         {thread.map((item) => {
           switch (item.kind) {
             case 'bot':
-              return <BotBubble key={item.id} text={item.text} />;
+              return (
+                <ChatRow key={item.id} reduced={reduced}>
+                  <BotBubble text={item.text} />
+                </ChatRow>
+              );
             case 'user':
               return (
-                <div key={item.id} className="ml-auto w-fit max-w-[85%]">
+                <ChatRow key={item.id} reduced={reduced} className="ml-auto w-fit max-w-[85%]">
                   <Chip active>{item.text}</Chip>
-                </div>
+                </ChatRow>
               );
             case 'bullets':
               return (
-                <div key={item.id} className="mr-auto max-w-[90%]">
-                  <Panel>
+                <ChatRow key={item.id} reduced={reduced} className="mr-auto max-w-[90%]">
+                  <div className="bg-card rounded-card p-(--sp-2)">
                     <Bullets items={item.items} />
-                  </Panel>
-                </div>
+                  </div>
+                </ChatRow>
               );
             case 'fit':
               return (
-                <div key={item.id} className="mr-auto max-w-[90%]">
-                  <Panel label="ПОД ТВОЮ СПЕЦИАЛИЗАЦИЮ" status="active">
-                    <p className="t-body-s text-ink">{item.text}</p>
-                  </Panel>
-                </div>
+                <ChatRow key={item.id} reduced={reduced} className="mr-auto max-w-[90%]">
+                  <div className="bg-card rounded-card grid gap-2 p-(--sp-2)">
+                    <p className="t-caption">ПОД ТВОЮ СПЕЦИАЛИЗАЦИЮ</p>
+                    <p className="t-body text-ink">{item.text}</p>
+                  </div>
+                </ChatRow>
               );
             case 'examples':
-              return <ExamplesBlock key={item.id} onOpen={handleOpenExample} />;
+              return (
+                <ChatRow key={item.id} reduced={reduced}>
+                  <ExamplesBlock onOpen={handleOpenExample} />
+                </ChatRow>
+              );
             case 'options':
-              return <OptionsBlock key={item.id} item={item} onPick={handlePick} />;
+              return (
+                <ChatRow key={item.id} reduced={reduced}>
+                  <OptionsBlock item={item} onPick={handlePick} />
+                </ChatRow>
+              );
             case 'cta':
               return (
-                <div key={item.id} className="mr-auto w-full">
+                <ChatRow key={item.id} reduced={reduced} className="mr-auto w-full">
                   <Button variant="primary" full onClick={handleCheckout}>
                     {item.label}
                   </Button>
-                </div>
+                </ChatRow>
               );
             default:
               return null;
